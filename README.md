@@ -1,10 +1,19 @@
+<!--
+SPDX-FileCopyrightText: 2026 Liam Michael Boland
+SPDX-License-Identifier: LicenseRef-Verum-Proprietary
+-->
 # Verum
+
+© 2026 Liam Michael Boland. Tutti i diritti riservati: vedi `LICENSE`.
+Come dimostrare la paternità del progetto: vedi `PROPRIETA.md`.
 
 Tre strumenti web per un corso di logica del primo ordine:
 
 - **Tavole** — tavole di verita' complete, validita' dell'argomento, soddisfacibilita' congiunta.
 - **Mondi** — editor di mondi di blocchi e valutazione di enunciati quantificati.
 - **Derivazioni** — editor di prove in stile Fitch con verifica regola per regola.
+
+Ogni schermata ha tre aspetti (Minimal, Neon, Dark), selezionabili dalla barra in alto; la scelta viene ricordata.
 
 Il progetto e' una riscrittura originale e indipendente. Non contiene, non decompila
 e non deriva da codice di software didattici esistenti.
@@ -18,7 +27,8 @@ I moduli ES non si caricano da `file://`. Serve un server statico:
 
 ## Test
 
-    node test/run.mjs
+    node test/run.mjs          # nucleo + conformita' architetturale
+    npm run test:smoke         # avvia il bundle in un DOM simulato (richiede npm install)
 
 Due suite: comportamento del nucleo (parser, semantica, regole di inferenza) e
 conformita' architetturale (direzione delle dipendenze fra strati).

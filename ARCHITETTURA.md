@@ -1,3 +1,7 @@
+<!--
+SPDX-FileCopyrightText: 2026 Liam Michael Boland
+SPDX-License-Identifier: LicenseRef-Verum-Proprietary
+-->
 # Architettura
 
 Questo documento spiega come è organizzato Verum e perché. È scritto pensando
@@ -81,6 +85,15 @@ Gli adattatori. `LocalStorageWorkspaceRepository` e
 i test e come rete di sicurezza quando il browser è in navigazione privata. Le
 tre viste web traducono DTO in nodi DOM e basta.
 
+### Temi
+
+I tre aspetti (Minimal, Neon, Dark) sono interamente infrastruttura: un insieme
+di token CSS per tema e l'adattatore `ThemeSwitcher`, che salva la scelta
+attraverso la porta `WorkspaceRepository`. Anche il materiale dei solidi nel
+tavolo dei blocchi legge i token del tema, quindi i pezzi non vanno ridisegnati.
+Dominio e casi d'uso non sanno che i temi esistono, e il test architetturale lo
+verifica.
+
 ### `src/main.js`
 
 Il **composition root**: l'unico file che nomina insieme tutti e tre gli strati.
@@ -154,9 +167,12 @@ non è un guasto: è l'input tipico di uno studente che sta imparando. È un val
 di ritorno (`tryParse`), perché deve arrivare all'interfaccia come messaggio
 didattico, non come stack trace.
 
-**Manca il test degli adattatori.** Le tre viste web non hanno test: servirebbe
-jsdom o Playwright. È la lacuna più seria del progetto ed è onesto scriverlo
-nella sezione "sviluppi futuri" invece di nasconderla.
+**I test degli adattatori sono solo di fumo.** `test/smoke.test.mjs` avvia il
+bundle distribuito in jsdom e verifica che schermate, temi e footer siano
+collegati e che l'avvio non produca errori. Non verifica l'aspetto grafico né
+le interazioni fini (trascinamento, focus): per quello servirebbe un browser
+vero con Playwright. Resta la lacuna più seria del progetto ed è onesto
+scriverla nella sezione "sviluppi futuri".
 
 ---
 

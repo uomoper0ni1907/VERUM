@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Dominio · Linguaggio · Printer
  * Rende una formula in notazione standard, inserendo le parentesi minime.

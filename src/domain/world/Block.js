@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Dominio · Mondo · Block
  * Entita' con identita' (id). Forma, dimensione, posizione e nomi assegnati.

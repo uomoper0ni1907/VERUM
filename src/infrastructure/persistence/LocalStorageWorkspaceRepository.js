@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Infrastruttura · Persistenza · adattatore su localStorage.
  * Sostituirlo con un adattatore HTTP verso un backend non richiede di toccare

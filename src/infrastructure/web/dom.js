@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /** Infrastruttura · Web · minime utilita' DOM. Nessuno di questi simboli entra nel dominio. */
 export const $  = (selector, root = document) => root.querySelector(selector);
 export const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];

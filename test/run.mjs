@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 import domainSuite from './domain.test.mjs';
 import architectureSuite from './architecture.test.mjs';
 

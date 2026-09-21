@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Infrastruttura · Web · schermata Derivazioni.
  * Rende l'aggregato Proof e mostra l'esito che riceve dal caso d'uso.

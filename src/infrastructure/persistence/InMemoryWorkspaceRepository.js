@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Infrastruttura · Persistenza · adattatore in memoria.
  * Usato dai test e come fallback quando localStorage non e' disponibile.

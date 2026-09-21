@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Infrastruttura · Web · schermata Tavole.
  * Sa disegnare, non sa di logica: riceve un DTO dal caso d'uso e lo rende.

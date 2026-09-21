@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Composition root
  *
@@ -13,6 +15,7 @@ import { CheckProof } from './application/CheckProof.js';
 import { LocalStorageWorkspaceRepository } from './infrastructure/persistence/LocalStorageWorkspaceRepository.js';
 import { Router } from './infrastructure/web/Router.js';
 import { SymbolPalette } from './infrastructure/web/SymbolPalette.js';
+import { ThemeSwitcher } from './infrastructure/web/ThemeSwitcher.js';
 import { TruthTableView } from './infrastructure/web/TruthTableView.js';
 import { WorldView } from './infrastructure/web/WorldView.js';
 import { ProofView } from './infrastructure/web/ProofView.js';
@@ -24,8 +27,10 @@ const evaluateInWorld = new EvaluateInWorld();
 const checkProof      = new CheckProof();
 
 async function bootstrap() {
+  console.info('Verum \u00a9 2026 Liam Michael Boland. Tutti i diritti riservati.');
   new Router().start();
   new SymbolPalette().start();
+  await new ThemeSwitcher({ repository }).start();
 
   await new TruthTableView({ buildTruthTable, repository }).start();
   await new WorldView({ evaluateInWorld, repository }).start();

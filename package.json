@@ -1,15 +1,19 @@
 {
   "name": "verum",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Strumenti web per la logica del primo ordine: tavole di verita', mondi di blocchi, derivazioni in stile Fitch.",
   "type": "module",
   "private": true,
   "scripts": {
     "start": "python3 -m http.server 8000",
     "test": "node test/run.mjs",
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test:smoke": "node build.mjs && node test/smoke.test.mjs"
   },
   "devDependencies": {
-    "esbuild": "^0.25.0"
-  }
+    "esbuild": "^0.25.0",
+    "jsdom": "^30.0.1"
+  },
+  "author": "Liam Michael Boland",
+  "license": "SEE LICENSE IN LICENSE"
 }

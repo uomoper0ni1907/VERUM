@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Test del nucleo. Nessun browser, nessun mock, nessuna dipendenza esterna:
  * il dominio e i casi d'uso si testano perche' non toccano infrastruttura.

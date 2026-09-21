@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /** Infrastruttura · Web · tastierino dei simboli logici. */
 import { $$, el } from './dom.js';
 

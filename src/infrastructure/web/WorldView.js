@@ -1,10 +1,12 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Infrastruttura · Web · schermata Mondi.
  * Tiene lo stato di modifica come dati grezzi e costruisce un World del
  * dominio solo al momento della valutazione: l'aggregato resta sempre valido.
  */
 import { $, $$, el, clear } from './dom.js';
-import { blockSvg } from './BlockShapes.js';
+import { blockSvg, ensureShapeDefs } from './BlockShapes.js';
 import { World, Block, Shape, Size, CONSTANTS } from '../../domain/world/World.js';
 
 const SHAPE_LABELS = [[Shape.TET, 'Tetraedro'], [Shape.CUBE, 'Cubo'], [Shape.DODEC, 'Dodecaedro']];
@@ -72,13 +74,19 @@ export class WorldView {
   toWorld() { return new World(this.blocks.map(b => new Block(b))); }
 
   renderBoard() {
+    ensureShapeDefs();
     const board = clear($('#wd-board'));
     for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
-      const cell = el('div', 'cell');
+      // vera scacchiera: la casella in basso a sinistra e' scura
+      const cell = el('div', 'cell' + ((x + y) % 2 === 1 ? ' dark' : ''));
+      // coordinate solo numeriche: le lettere si confonderebbero con le costanti a-f
+      if (x === 0) cell.appendChild(el('span', 'coord row', String(8 - y)));
+      if (y === 7) cell.appendChild(el('span', 'coord col', String(x + 1)));
       const block = this.blocks.find(b => b.x === x && b.y === y);
 
       if (block) {
-        const node = el('div', 'blk' + (this.selected === block.id ? ' sel' : ''));
+        if (this.selected === block.id) cell.classList.add('selcell');
+        const node = el('div', 'blk');
         node.innerHTML = blockSvg(block);
         node.draggable = true;
         node.addEventListener('click', e => {

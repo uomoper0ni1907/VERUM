@@ -1,3 +1,5 @@
+// SPDX-FileCopyrightText: 2026 Liam Michael Boland
+// SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 /**
  * Dominio · Verita' · TruthTable
  * Semantica veritativo-funzionale. Tutto cio' che non e' un connettivo

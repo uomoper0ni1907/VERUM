@@ -1,68 +1,178 @@
 <!DOCTYPE html>
+<!--
+  Verum
+  SPDX-FileCopyrightText: 2026 Liam Michael Boland
+  SPDX-License-Identifier: LicenseRef-Verum-Proprietary
+-->
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Verum — strumenti per la logica</title>
+<meta name="author" content="Liam Michael Boland">
+<meta name="copyright" content="© 2026 Liam Michael Boland. Tutti i diritti riservati.">
+<script>
+/* Applica il tema salvato prima del primo disegno, per evitare il lampo del tema
+   sbagliato. Legge la stessa chiave usata da LocalStorageWorkspaceRepository. */
+try{var t=JSON.parse(localStorage.getItem('verum:theme'));if(t)document.documentElement.dataset.look=t;}catch(e){}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-:root{
-  --paper:#EDEEE8; --panel:#FBFBF8; --panel-2:#F4F5EF;
+/* SPDX-FileCopyrightText: 2026 Liam Michael Boland
+   SPDX-License-Identifier: LicenseRef-Verum-Proprietary */
+
+/* ============================================================
+   TEMI
+   Ogni colore dell'interfaccia passa da un token. Un tema e'
+   solo un diverso insieme di valori per gli stessi token.
+   ============================================================ */
+:root,
+:root[data-look="minimal"]{
+  color-scheme:light;
+  --paper:#EDEEE8; --panel:#FBFBF8; --panel-2:#F4F5EF; --field:#FFFFFF; --lift:#FFFFFF;
   --ink:#16181A; --ink2:#5A605C; --ink3:#8B918C;
-  --rule:#CBCEC4; --rule2:#DCDED5;
-  --blue:#2033C4; --blue-soft:#E4E7FA; --blue-line:#B9C0F0;
-  --red:#A23429; --red-soft:#F7E5E2;
-  --amber:#7A5C0E; --amber-soft:#F3ECD6;
+  --rule:#CBCEC4; --rule2:#DCDED5; --row-hover:#F7F8FD;
+  --blue:#2033C4; --blue-hover:#182AA8; --blue-soft:#E4E7FA; --blue-line:#B9C0F0; --on-accent:#FFFFFF;
+  --red:#A23429; --red-soft:#F7E5E2; --red-line:#E0BDB7;
+  --amber:#7A5C0E; --amber-soft:#F3ECD6; --amber-line:#DECFA4;
+  --glow:none; --glow-text:none;
+  /* tavolo e pezzi */
+  --table:#1F2A3C;
+  --sq-light:#F1E5C4; --sq-dark:#A8A7A0; --coord-light:#A8A7A0; --coord-dark:#F1E5C4;
+  --pc-hi:#FFE9A8; --pc-mid:#F2B83A; --pc-lo:#B8781C; --pc-deep:#8A5410; --pc-edge:#6B3F0B;
+  --pc-drop:drop-shadow(0 3px 2px rgba(40,24,4,.35));
+  --grain-opacity:.22;
+}
+/* Scuro: scelto esplicitamente, oppure ereditato dal sistema o dal visualizzatore
+   finche' l'utente non sceglie un aspetto. data-look e' l'attributo di Verum;
+   data-theme e' quello che puo' impostare l'ambiente che ospita la pagina. */
+:root[data-look="dark"],
+:root[data-theme="dark"]:not([data-look]){
+  color-scheme:dark;
+  --paper:#15181B; --panel:#1B1F23; --panel-2:#22272C; --field:#111417; --lift:#20252A;
+  --ink:#E7E9E4; --ink2:#A8AEA9; --ink3:#747A76;
+  --rule:#343A40; --rule2:#2A2F35; --row-hover:#232833;
+  --blue:#8795FF; --blue-hover:#A1ACFF; --blue-soft:#252C4F; --blue-line:#414C8C; --on-accent:#0F1220;
+  --red:#FF8474; --red-soft:#3A2220; --red-line:#6A3A33;
+  --amber:#E6BF62; --amber-soft:#342B16; --amber-line:#5E4C22;
+  --glow:none; --glow-text:none;
+  --table:#0E1013;
+  --sq-light:#4A4F56; --sq-dark:#2C3035; --coord-light:#2C3035; --coord-dark:#8C939B;
+  --pc-hi:#FFFDF6; --pc-mid:#D9D2C1; --pc-lo:#9C9481; --pc-deep:#6E6757; --pc-edge:#1E1C18;
+  --pc-drop:drop-shadow(0 4px 3px rgba(0,0,0,.6));
+  --grain-opacity:.12;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]):not([data-look]){
+  color-scheme:dark;
+  --paper:#15181B; --panel:#1B1F23; --panel-2:#22272C; --field:#111417; --lift:#20252A;
+  --ink:#E7E9E4; --ink2:#A8AEA9; --ink3:#747A76;
+  --rule:#343A40; --rule2:#2A2F35; --row-hover:#232833;
+  --blue:#8795FF; --blue-hover:#A1ACFF; --blue-soft:#252C4F; --blue-line:#414C8C; --on-accent:#0F1220;
+  --red:#FF8474; --red-soft:#3A2220; --red-line:#6A3A33;
+  --amber:#E6BF62; --amber-soft:#342B16; --amber-line:#5E4C22;
+  --glow:none; --glow-text:none;
+  --table:#0E1013;
+  --sq-light:#4A4F56; --sq-dark:#2C3035; --coord-light:#2C3035; --coord-dark:#8C939B;
+  --pc-hi:#FFFDF6; --pc-mid:#D9D2C1; --pc-lo:#9C9481; --pc-deep:#6E6757; --pc-edge:#1E1C18;
+  --pc-drop:drop-shadow(0 4px 3px rgba(0,0,0,.6));
+  --grain-opacity:.12;
+  }
+}
+:root[data-look="neon"]{
+  color-scheme:dark;
+  --paper:#0C0920; --panel:#120E2B; --panel-2:#19143A; --field:#0A0719; --lift:#1B1640;
+  --ink:#F3EFFF; --ink2:#BCB3E6; --ink3:#8078AD;
+  --rule:#2F2766; --rule2:#231D4E; --row-hover:#1A1540;
+  --blue:#21E6FF; --blue-hover:#7DF2FF; --blue-soft:rgba(33,230,255,.12); --blue-line:rgba(33,230,255,.5); --on-accent:#061019;
+  --red:#FF3D95; --red-soft:rgba(255,61,149,.13); --red-line:rgba(255,61,149,.5);
+  --amber:#FFD94A; --amber-soft:rgba(255,217,74,.12); --amber-line:rgba(255,217,74,.45);
+  --glow:0 0 0 1px rgba(33,230,255,.35), 0 0 14px rgba(33,230,255,.45);
+  --glow-text:0 0 10px rgba(33,230,255,.65);
+  --table:#07051A;
+  --sq-light:#1F1848; --sq-dark:#130F31; --coord-light:#5E55A0; --coord-dark:#5E55A0;
+  --pc-hi:#C8FBFF; --pc-mid:#21D4F0; --pc-lo:#7B3FE0; --pc-deep:#3A1C8C; --pc-edge:#21E6FF;
+  --pc-drop:drop-shadow(0 0 6px rgba(33,230,255,.75)) drop-shadow(0 0 2px rgba(255,61,149,.6));
+  --grain-opacity:0;
+}
+
+:root{
   --r:3px;
   --f-ui:"IBM Plex Sans",system-ui,sans-serif;
   --f-txt:"Spectral",Georgia,serif;
 }
 *{box-sizing:border-box}
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px);background:var(--paper)}
 html,body{margin:0;padding:0}
-body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  transition:background-color .2s,color .2s}
 button{font:inherit;color:inherit;cursor:pointer}
 input,select,textarea{font:inherit;color:inherit}
 .formula{font-family:var(--f-txt);font-size:1.06em;letter-spacing:.01em}
+:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
 
 /* ---------- shell ---------- */
 .screen{display:none}
 .screen.on{display:block}
 
+/* ---------- selettore del tema ---------- */
+.themes{display:inline-flex;border:1px solid var(--rule);border-radius:var(--r);overflow:hidden;background:var(--panel-2)}
+.themes button{border:0;background:none;padding:5px 11px;font-size:12.5px;color:var(--ink2)}
+.themes button+button{border-left:1px solid var(--rule)}
+.themes button:hover{color:var(--ink)}
+.themes button[aria-pressed="true"]{background:var(--blue);color:var(--on-accent);box-shadow:var(--glow)}
+
+/* ---------- footer ---------- */
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  padding:14px clamp(14px,3vw,28px);border-top:1px solid var(--rule);background:var(--panel);
+  font-size:12.5px;color:var(--ink3)}
+.land .foot{background:transparent}
+
 /* ---------- landing ---------- */
 .land{min-height:100vh;display:flex;flex-direction:column}
-.land-head{padding:clamp(28px,6vw,72px) clamp(20px,5vw,64px) 0;max-width:1240px;margin:0 auto;width:100%}
-.mark{font-family:var(--f-txt);font-weight:300;font-size:clamp(46px,9vw,104px);line-height:.92;letter-spacing:-.02em;margin:0}
-.mark em{font-style:italic;font-weight:300}
+.land-top{display:flex;justify-content:flex-end;padding:18px clamp(20px,5vw,64px) 0;max-width:1240px;margin:0 auto;width:100%}
+.land-head{padding:clamp(18px,4vw,48px) clamp(20px,5vw,64px) 0;max-width:1240px;margin:0 auto;width:100%}
+.mark{font-family:var(--f-txt);font-weight:300;font-size:clamp(46px,9vw,104px);line-height:.92;letter-spacing:-.02em;margin:0;text-shadow:var(--glow-text)}
 .tagline{font-family:var(--f-txt);font-size:clamp(17px,2.2vw,21px);color:var(--ink2);max-width:46ch;margin:18px 0 0;line-height:1.55}
 .provenance{margin:26px 0 0;padding-top:16px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink3);max-width:64ch}
 .tools{max-width:1240px;margin:0 auto;width:100%;padding:clamp(26px,5vw,56px) clamp(20px,5vw,64px) 64px;
-  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;flex:1;align-content:start}
+.tools{background:linear-gradient(var(--rule),var(--rule)) content-box}
 @media(max-width:880px){.tools{grid-template-columns:1fr}}
-.tool{background:var(--panel);border:0;text-align:left;padding:0;display:flex;flex-direction:column;min-height:420px;
-  transition:background .14s}
-.tool:hover,.tool:focus-visible{background:#fff}
+.tool{background:var(--panel);border:0;text-align:left;padding:0;display:flex;flex-direction:column;min-height:420px;transition:background .14s,box-shadow .14s}
+.tool:hover,.tool:focus-visible{background:var(--lift);box-shadow:var(--glow)}
 .tool:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
 .tool-vis{flex:1;display:flex;align-items:center;justify-content:center;padding:26px;background:var(--panel-2);border-bottom:1px solid var(--rule2)}
 .tool-body{padding:22px 24px 26px}
 .tool h2{font-family:var(--f-txt);font-weight:400;font-size:27px;margin:0 0 2px;letter-spacing:-.01em}
 .tool .sub{font-size:12.5px;color:var(--ink3);margin:0 0 10px}
 .tool p{margin:0;color:var(--ink2);font-size:14px;line-height:1.55;max-width:34ch}
-.tool .go{margin-top:16px;font-size:13.5px;font-weight:500;color:var(--blue)}
+.tool .go{margin-top:16px;font-size:13.5px;font-weight:500;color:var(--blue);text-shadow:var(--glow-text)}
+/* le illustrazioni della landing seguono il tema */
+.tool-vis [fill="#16181A"]{fill:var(--ink)}   .tool-vis [stroke="#16181A"]{stroke:var(--ink)}
+.tool-vis [fill="#5A605C"]{fill:var(--ink2)}  .tool-vis [fill="#8B918C"]{fill:var(--ink3)}
+.tool-vis [stroke="#CBCEC4"]{stroke:var(--rule)}
+.tool-vis [fill="#2033C4"]{fill:var(--blue)}  .tool-vis [fill="#A23429"]{fill:var(--red)}
+.tool-vis [fill="#E4E7FA"]{fill:var(--blue-soft)}
+.tool-vis [fill="#FBFBF8"],.tool-vis [fill="#F3F4EE"]{fill:var(--field)}
+.tool-vis [fill="#EDEEE8"],.tool-vis [fill="#EAEBE4"]{fill:var(--panel-2)}
+.tool-vis [fill="#E3E4DC"]{fill:var(--rule2)}
 
 /* ---------- workspace chrome ---------- */
 .ws{min-height:100vh;display:flex;flex-direction:column}
 .bar{display:flex;align-items:center;gap:14px;padding:10px clamp(14px,3vw,28px);background:var(--panel);
-  border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+  border-bottom:1px solid var(--rule);position:sticky;top:env(safe-area-inset-top,0px);z-index:20;flex-wrap:wrap}
 .back{background:none;border:1px solid var(--rule);border-radius:var(--r);padding:5px 11px;font-size:13px;color:var(--ink2)}
 .back:hover{border-color:var(--ink3);color:var(--ink)}
-.bar h1{font-family:var(--f-txt);font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em}
+.bar h1{font-family:var(--f-txt);font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em;text-shadow:var(--glow-text)}
 .bar .spacer{flex:1}
 .btn{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);padding:6px 12px;font-size:13.5px}
 .btn:hover{border-color:var(--ink3)}
-.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
-.btn.primary:hover{background:#182aa8;border-color:#182aa8}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:var(--on-accent);box-shadow:var(--glow)}
+.btn.primary:hover{background:var(--blue-hover);border-color:var(--blue-hover)}
 .btn.ghost{background:none}
 .btn.sm{padding:3px 8px;font-size:12.5px}
 .btn:disabled{opacity:.42;cursor:default}
@@ -71,16 +181,14 @@ input,select,textarea{font:inherit;color:inherit}
 .pane{background:var(--panel);padding:18px clamp(14px,2.4vw,24px);overflow:auto}
 .pane h3{font-family:var(--f-ui);font-weight:600;font-size:12.5px;color:var(--ink3);margin:0 0 10px;letter-spacing:.02em}
 
-/* palette of symbols */
 .palette{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 12px}
 .palette button{font-family:var(--f-txt);font-size:16px;line-height:1;width:30px;height:28px;background:var(--panel-2);
   border:1px solid var(--rule2);border-radius:var(--r);display:grid;place-items:center}
 .palette button:hover{background:var(--blue-soft);border-color:var(--blue-line)}
 
-/* formula rows */
 .frow{display:flex;align-items:center;gap:8px;margin-bottom:5px}
 .frow .n{width:22px;text-align:right;font-size:12px;color:var(--ink3);flex:none}
-.finput{flex:1;min-width:0;padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r);background:#fff;
+.finput{flex:1;min-width:0;padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r);background:var(--field);
   font-family:var(--f-txt);font-size:15.5px}
 .finput:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
 .finput.bad{border-color:var(--red);background:var(--red-soft)}
@@ -88,50 +196,63 @@ input,select,textarea{font:inherit;color:inherit}
 .xbtn:hover{color:var(--red);background:var(--red-soft)}
 .err{font-size:12.5px;color:var(--red);margin:1px 0 7px 30px}
 
-/* verdict chips */
 .chip{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 7px;border-radius:2px;border:1px solid}
 .chip.t{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue)}
-.chip.f{background:var(--red-soft);border-color:#E0BDB7;color:var(--red)}
+.chip.f{background:var(--red-soft);border-color:var(--red-line);color:var(--red)}
 .chip.n{background:var(--panel-2);border-color:var(--rule);color:var(--ink3)}
-.chip.w{background:var(--amber-soft);border-color:#DECFA4;color:var(--amber)}
+.chip.w{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber)}
 
-/* truth table */
-.ttwrap{overflow:auto;border:1px solid var(--rule);border-radius:var(--r);background:#fff;max-height:60vh}
+.ttwrap{overflow:auto;border:1px solid var(--rule);border-radius:var(--r);background:var(--field);max-height:60vh}
 table.tt{border-collapse:collapse;font-family:var(--f-txt);font-size:14.5px;white-space:nowrap}
 table.tt th,table.tt td{padding:3px 9px;text-align:center;border-bottom:1px solid var(--rule2)}
 table.tt thead th{position:sticky;top:0;background:var(--panel-2);border-bottom:1px solid var(--rule);font-weight:400;z-index:2}
 table.tt .sep{border-left:1px solid var(--rule)}
 table.tt td.ref{color:var(--ink3)}
 table.tt td.main{background:var(--blue-soft);font-weight:600}
-table.tt tbody tr:hover{background:#F7F8FD}
+table.tt tbody tr:hover{background:var(--row-hover)}
 .T{color:var(--blue)} .F{color:var(--red)}
 
-/* summary list */
-.sum{border:1px solid var(--rule);border-radius:var(--r);background:#fff;overflow:hidden}
+.sum{border:1px solid var(--rule);border-radius:var(--r);background:var(--field);overflow:hidden}
 .sum .row{display:flex;gap:10px;align-items:baseline;padding:8px 11px;border-bottom:1px solid var(--rule2)}
 .sum .row:last-child{border-bottom:0}
-.sum .row .k{font-size:12.5px;color:var(--ink3);flex:none;width:auto}
+.sum .row .k{font-size:12.5px;color:var(--ink3);flex:none}
 
-/* ---------- world grid ---------- */
-.board{--cell:56px;display:grid;grid-template-columns:repeat(8,var(--cell));grid-template-rows:repeat(8,var(--cell));
-  border:1px solid var(--ink);background:var(--rule2);gap:1px;width:max-content;margin:0 auto}
-.cell{background:#F3F4EE;position:relative;display:grid;place-items:center}
-.cell:nth-child(odd){background:#EAEBE4}
-.cell.drop{outline:2px solid var(--blue);outline-offset:-2px}
-.blk{width:100%;height:100%;display:grid;place-items:center;cursor:grab}
-.blk svg{display:block}
-.blk.sel svg .body{stroke:var(--blue);stroke-width:2.6}
-.blk .lbl{position:absolute;bottom:1px;right:3px;font-family:var(--f-txt);font-size:11px;color:var(--ink2)}
+/* ============================================================
+   TAVOLO DEI BLOCCHI
+   Scacchiera vera (le caselle alternano per riga e colonna),
+   grana leggera, coordinate negli angoli, pezzi in rilievo.
+   ============================================================ */
+.boardframe{background:var(--table);padding:10px;border-radius:10px;
+  box-shadow:0 14px 34px rgba(0,0,0,.28), var(--glow)}
+.board{--cell:60px;display:grid;grid-template-columns:repeat(8,var(--cell));grid-template-rows:repeat(8,var(--cell));
+  width:max-content;margin:0 auto;border-radius:6px;overflow:hidden}
+@media(max-width:620px){.board{--cell:40px}}
+.cell{position:relative;display:grid;place-items:center;background:var(--sq-light)}
+.cell.dark{background:var(--sq-dark)}
+.cell::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:var(--grain-opacity);
+  background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0'/></filter><rect width='80' height='80' filter='url(%23n)'/></svg>")}
+.coord{position:absolute;font-size:10.5px;font-weight:600;line-height:1;pointer-events:none;color:var(--coord-light)}
+.cell.dark .coord{color:var(--coord-dark)}
+.coord.row{top:4px;left:5px}
+.coord.col{bottom:4px;right:5px}
+.cell.drop{box-shadow:inset 0 0 0 3px var(--blue)}
+.cell.selcell{box-shadow:inset 0 0 0 3px var(--blue), inset 0 0 18px var(--blue-soft)}
+.blk{width:100%;height:100%;display:grid;place-items:center;cursor:grab;position:relative;z-index:1}
+.blk svg{display:block;filter:var(--pc-drop);transition:transform .12s ease-out}
+.blk:hover svg{transform:translateY(-2px)}
+.blk:active{cursor:grabbing}
+.lbl{position:absolute;z-index:2;bottom:3px;left:4px;font-family:var(--f-txt);font-size:11.5px;line-height:1;
+  padding:2px 5px 3px;border-radius:8px;background:var(--panel);color:var(--ink);border:1px solid var(--rule);box-shadow:var(--glow)}
 .boardwrap{display:flex;flex-direction:column;align-items:center;gap:12px}
 .legend{font-size:12px;color:var(--ink3);text-align:center}
-.inspector{border:1px solid var(--rule);border-radius:var(--r);background:#fff;padding:12px}
+.inspector{border:1px solid var(--rule);border-radius:var(--r);background:var(--field);padding:12px}
 .inspector .grp{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
 .inspector label{font-size:12px;color:var(--ink3);display:block;margin-bottom:4px}
 .seg{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);padding:4px 10px;font-size:13px}
-.seg.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.seg.on{background:var(--blue);border-color:var(--blue);color:var(--on-accent);box-shadow:var(--glow)}
 .nametags{display:flex;gap:4px;flex-wrap:wrap}
 .nametag{border:1px solid var(--rule);border-radius:var(--r);padding:2px 8px;font-family:var(--f-txt);font-size:14px;background:var(--panel-2)}
-.nametag.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.nametag.on{background:var(--blue);border-color:var(--blue);color:var(--on-accent)}
 
 /* ---------- fitch ---------- */
 .proof{font-family:var(--f-txt);font-size:15.5px}
@@ -141,15 +262,15 @@ table.tt tbody tr:hover{background:#F7F8FD}
 .sub{border-left:1.5px solid var(--ink);padding-left:10px;margin:3px 0}
 .sub>.assume{border-bottom:1.5px solid var(--ink);padding-bottom:3px;margin-bottom:3px}
 .pbody{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-.pf{flex:1;min-width:80px;border:1px solid transparent;border-radius:var(--r);padding:3px 7px;background:#fff}
+.pf{flex:1;min-width:80px;border:1px solid transparent;border-radius:var(--r);padding:3px 7px;background:var(--field)}
 .pf:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
 .pf.bad{background:var(--red-soft)}
 .prule{font-family:var(--f-ui);font-size:12.5px;width:118px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);background:var(--panel-2);padding:3px 4px}
-.prefs{font-family:var(--f-ui);font-size:12.5px;width:78px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);padding:3px 6px;background:#fff}
+.prefs{font-family:var(--f-ui);font-size:12.5px;width:78px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);padding:3px 6px;background:var(--field)}
 .pstat{width:18px;flex:none;text-align:center;font-size:14px}
-.pstat.ok{color:var(--blue)} .pstat.no{color:var(--red)}
+.pstat.ok{color:var(--blue);text-shadow:var(--glow-text)} .pstat.no{color:var(--red)}
 .pmsg{font-family:var(--f-ui);font-size:11.5px;color:var(--red);margin:0 0 3px 40px}
-.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-radius:2px;padding:0 7px;background:#fff;width:52px;text-align:center}
+.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-radius:2px;padding:0 7px;background:var(--field);width:52px;text-align:center}
 .goalbar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}
 .toolrow{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
 .hint{font-size:12.5px;color:var(--ink3);line-height:1.6}
@@ -168,6 +289,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
 <!-- ============ LANDING ============ -->
 <section id="s-home" class="screen on">
  <div class="land">
+  <div class="land-top"><div class="themes" data-themes></div></div>
   <div class="land-head">
     <h1 class="mark">Verum</h1>
     <p class="tagline">Tre strumenti per la logica del primo ordine: costruire tavole di verità, valutare enunciati in un mondo di blocchi, e costruire derivazioni in stile Fitch.</p>
@@ -248,6 +370,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
       </div>
     </button>
   </div>
+  <footer class="foot"><span>© 2026 Liam Michael Boland</span><span>Tutti i diritti riservati</span></footer>
  </div>
 </section>
 <!-- ============ TAVOLE ============ -->
@@ -257,6 +380,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     <button class="back" data-home>← Verum</button>
     <h1>Tavole</h1>
     <span class="spacer"></span>
+    <div class="themes" data-themes></div>
     <button class="btn" id="tt-example">Carica esempio</button>
     <button class="btn primary" id="tt-build">Costruisci tavola</button>
   </div>
@@ -284,6 +408,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     </div>
     <div class="pane" id="tt-out"></div>
   </div>
+  <footer class="foot"><span>© 2026 Liam Michael Boland</span><span>Tutti i diritti riservati</span></footer>
  </div>
 </section>
 
@@ -294,6 +419,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     <button class="back" data-home>← Verum</button>
     <h1>Mondi</h1>
     <span class="spacer"></span>
+    <div class="themes" data-themes></div>
     <button class="btn" id="wd-example">Mondo di esempio</button>
     <button class="btn" id="wd-clearworld">Svuota mondo</button>
     <button class="btn primary" id="wd-eval">Valuta enunciati</button>
@@ -301,8 +427,8 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
   <div class="cols" style="grid-template-columns:1fr minmax(330px,430px)">
     <div class="pane">
       <div class="boardwrap">
-        <div class="board" id="wd-board"></div>
-        <p class="legend">Trascina un blocco per spostarlo · clic su una casella vuota per aggiungerne uno · clic su un blocco per selezionarlo<br>La riga in basso è il <b>fronte</b> del tavolo, la colonna a sinistra è la <b>sinistra</b>.</p>
+        <div class="boardframe"><div class="board" id="wd-board"></div></div>
+        <p class="legend">Trascina un blocco per spostarlo, clic su una casella vuota per aggiungerne uno, clic su un blocco per selezionarlo.<br>La riga 1 è il <b>fronte</b> del tavolo, la colonna 1 è la <b>sinistra</b>.</p>
         <div class="inspector" id="wd-insp" style="width:min(560px,100%)"></div>
       </div>
     </div>
@@ -333,6 +459,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
       <p class="hint" style="margin-top:10px">Le costanti disponibili sono <code>a b c d e f</code>. Assegnale ai blocchi nel pannello di ispezione. Un nome non assegnato rende l'enunciato indefinito.</p>
     </div>
   </div>
+  <footer class="foot"><span>© 2026 Liam Michael Boland</span><span>Tutti i diritti riservati</span></footer>
  </div>
 </section>
 
@@ -343,6 +470,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     <button class="back" data-home>← Verum</button>
     <h1>Derivazioni</h1>
     <span class="spacer"></span>
+    <div class="themes" data-themes></div>
     <button class="btn" id="pf-example">Carica esempio</button>
     <button class="btn" id="pf-reset">Nuova prova</button>
     <button class="btn primary" id="pf-check">Verifica prova</button>
@@ -401,6 +529,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
       </details>
     </div>
   </div>
+  <footer class="foot"><span>© 2026 Liam Michael Boland</span><span>Tutti i diritti riservati</span></footer>
  </div>
 </section>
 
