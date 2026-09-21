@@ -11,7 +11,12 @@ Tre strumenti web per un corso di logica del primo ordine:
 
 - **Tavole** — tavole di verita' complete, validita' dell'argomento, soddisfacibilita' congiunta.
 - **Mondi** — editor di mondi di blocchi e valutazione di enunciati quantificati.
+  "Carica sentences" importa i file `.sen` del corso (singoli, a gruppi o in uno
+  zip) e li offre in un menu; anche questi restano nel browser di chi li carica.
 - **Derivazioni** — editor di prove in stile Fitch con verifica regola per regola.
+  Il pannello a destra mostra il PDF delle regole del corso, che ogni utente
+  carica dal proprio computer: il PDF resta nel suo browser e non fa parte del
+  repository, perché è materiale di terzi.
 
 Ogni schermata ha tre aspetti (Minimal, Neon, Dark), selezionabili dalla barra in alto; la scelta viene ricordata.
 

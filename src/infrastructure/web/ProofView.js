@@ -8,6 +8,8 @@
 import { $, el, clear } from './dom.js';
 import { Proof, Line, Subproof, Justification, resetIds } from '../../domain/proof/Proof.js';
 import { RULE_NAMES } from '../../domain/proof/rules.js';
+import { namesInUse, freshConstant } from '../../domain/proof/constants.js';
+import { constantPicker } from './ConstantPicker.js';
 
 const VERDICT_CHIP = {
   complete:   't', sound: 'n', incomplete: 'w', 'off-goal': 'w', empty: null
@@ -45,7 +47,7 @@ export class ProofView {
     this.render();
   }
 
-  blankProof() { resetIds(1); return new Proof({ goal: 'P → (Q → P)' }); }
+  blankProof() { resetIds(1); return new Proof({ goal: '' }); }
 
   exampleProof() {
     resetIds(1);
@@ -95,14 +97,18 @@ export class ProofView {
       const body = el('div', 'pbody');
 
       if (isAssumption && subproof) {
-        const constant = el('input', 'pconst formula');
-        constant.value = subproof.constant || '';
-        constant.placeholder = 'c';
-        constant.maxLength = 3;
-        constant.title = 'Costante nuova (per ∀ Intro / ∃ Elim)';
-        constant.addEventListener('input', () => { subproof.constant = constant.value.trim(); });
-        constant.addEventListener('blur', () => { this.render(); this.persist(); });
-        body.appendChild(constant);
+        // la costante di questa sottodimostrazione non conta come "gia' usata" per se stessa
+        const without = compute => {
+          const own = subproof.constant; subproof.constant = '';
+          try { return compute(); } finally { subproof.constant = own; }
+        };
+        body.appendChild(constantPicker({
+          value: subproof.constant || '',
+          used: without(() => namesInUse(this.proof)),
+          fresh: () => without(() => freshConstant(this.proof)),
+          onChange: name => { subproof.constant = name; },
+          onCommit: () => { this.render(); this.persist(); }
+        }));
       }
 
       const text = el('input', 'pf formula');

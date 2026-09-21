@@ -20,6 +20,21 @@ export class LocalStorageWorkspaceRepository extends WorkspaceRepository {
     try { localStorage.setItem(this.prefix + key, JSON.stringify(value)); }
     catch { /* quota o modalita' privata: lo stato resta solo in memoria */ }
   }
+  /**
+   * Svuota le chiavi indicate una sola volta, quando cambia la versione del
+   * formato salvato. Serve a eliminare gli esempi precaricati dalle versioni
+   * precedenti senza toccare le preferenze (come il tema).
+   */
+  async resetIfOutdated(version, keys) {
+    try {
+      const marker = this.prefix + 'schema';
+      if (localStorage.getItem(marker) === String(version)) return false;
+      keys.forEach(k => localStorage.removeItem(this.prefix + k));
+      localStorage.setItem(marker, String(version));
+      return true;
+    } catch { return false; }
+  }
+
   async remove(key) {
     try { localStorage.removeItem(this.prefix + key); } catch { /* ignorato */ }
   }

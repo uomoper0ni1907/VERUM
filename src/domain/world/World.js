@@ -7,7 +7,7 @@
  * il riferimento delle costanti e l'estensione di ogni predicato.
  * Convenzione: colonna 0 = sinistra, riga 0 = fondo del tavolo.
  */
-import { Block, CONSTANTS } from './Block.js';
+import { Block, CONSTANTS, Size } from './Block.js';
 
 export class UndefinedReference extends Error {}
 
@@ -18,14 +18,59 @@ export const SIGNATURE = Object.freeze({
   Between:3
 });
 
+/** Un mondo che viola le regole di costruzione del tavolo. */
+export class WorldInvariantViolation extends Error {
+  constructor(message, blockIds = []) { super(message); this.name = 'WorldInvariantViolation'; this.blockIds = blockIds; }
+}
+
+export const PLACEMENT = Object.freeze({
+  SAME_SQUARE: 'due blocchi non possono occupare la stessa casella',
+  LARGE_NEIGHBOUR: 'un blocco grande occupa anche le 8 caselle intorno: nessun blocco puo\u2019 stargli accanto, nemmeno in diagonale'
+});
+
 export class World {
   constructor(blocks = []) {
     this.blocks = [...blocks];
     const seen = new Set();
     for (const b of this.blocks) for (const n of b.names) {
-      if (seen.has(n)) throw new Error(`la costante "${n}" e' assegnata a piu' di un blocco`);
+      if (seen.has(n)) throw new WorldInvariantViolation(`la costante "${n}" e' assegnata a piu' di un blocco`);
       seen.add(n);
     }
+    for (let i = 0; i < this.blocks.length; i++)
+      for (let j = i + 1; j < this.blocks.length; j++) {
+        const reason = World.conflict(this.blocks[i], this.blocks[j]);
+        if (reason) throw new WorldInvariantViolation(reason, [this.blocks[i].id, this.blocks[j].id]);
+      }
+  }
+
+  /**
+   * Regola di costruzione del tavolo: ogni blocco occupa la propria casella;
+   * un blocco grande occupa anche le otto caselle che lo circondano (un 3x3,
+   * ridotto dal bordo del tavolo: 2x2 in un angolo, 2x3 lungo un lato).
+   * Due blocchi sono in conflitto se le loro aree si sovrappongono.
+   * Restituisce il motivo del conflitto, oppure null.
+   */
+  static conflict(a, b) {
+    if (a.x === b.x && a.y === b.y) return PLACEMENT.SAME_SQUARE;
+    const touching = Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) === 1;
+    if (touching && (a.size === Size.LARGE || b.size === Size.LARGE)) return PLACEMENT.LARGE_NEIGHBOUR;
+    return null;
+  }
+
+  /**
+   * Verifica se `candidate` ({x, y, size}) puo' stare su un tavolo che contiene
+   * `blocks`, ignorando il blocco `ignoreId` (quello che si sta spostando o
+   * ridimensionando). Lavora su dati semplici, cosi' l'interfaccia puo'
+   * interrogarla prima di modificare qualunque cosa.
+   * @returns {{reason:string, blocking:object}|null}
+   */
+  static placementConflict(blocks, candidate, ignoreId = null) {
+    for (const other of blocks) {
+      if (other.id === ignoreId) continue;
+      const reason = World.conflict(candidate, other);
+      if (reason) return { reason, blocking: other };
+    }
+    return null;
   }
   get isEmpty() { return this.blocks.length === 0; }
 

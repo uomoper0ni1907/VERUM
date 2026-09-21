@@ -111,7 +111,7 @@ container globale né un singleton.
 **Value object immutabili.** Una formula si crea solo tramite i costruttori di
 `Formula.js` e i nodi sono congelati. Un `Block` valida forma, dimensione e
 posizione nel costruttore: non esiste un blocco in stato illegale. `World`
-rifiuta di esistere se due blocchi portano la stessa costante.
+rifiuta di esistere se due blocchi portano la stessa costante. Allo stesso modo rifiuta i blocchi in conflitto: un blocco grande occupa anche le otto caselle intorno, quindi nessun altro blocco può stargli accanto, nemmeno in diagonale. La regola è stata verificata sui 39 mondi distribuiti con il software originale (nessuna eccezione su 84 coppie di blocchi vicini) e vive nel dominio, non nell'interfaccia: vale per l'editor, per un mondo importato e per i test. L'interfaccia si limita a chiedere al dominio `World.placementConflict()` prima di aggiungere, spostare o ingrandire un blocco.
 
 **Niente modello anemico.** `World.satisfies()` sta su `World`, non in un
 `WorldService` che fruga nei campi altrui. `Proof.index()` e

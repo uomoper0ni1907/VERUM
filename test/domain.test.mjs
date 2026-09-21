@@ -9,8 +9,9 @@ import { parse, tryParse } from '../src/domain/language/Parser.js';
 import { print } from '../src/domain/language/Printer.js';
 import { equals, substitute, freeTerms, conjuncts, disjuncts, equalsUpToSubstitution } from '../src/domain/language/Formula.js';
 import { isTautologicalConsequence } from '../src/domain/truth/TruthTable.js';
-import { World, Block, Shape, Size } from '../src/domain/world/World.js';
+import { World, Block, Shape, Size, WorldInvariantViolation, PLACEMENT } from '../src/domain/world/World.js';
 import { Proof, Line, Subproof, Justification, resetIds } from '../src/domain/proof/Proof.js';
+import { freshConstant, namesInUse, isConstantName } from '../src/domain/proof/constants.js';
 import { BuildTruthTable } from '../src/application/BuildTruthTable.js';
 import { EvaluateInWorld } from '../src/application/EvaluateInWorld.js';
 import { CheckProof } from '../src/application/CheckProof.js';
@@ -26,7 +27,10 @@ export default function suite(t) {
   t('esistenziale ascii',       print(parse('/y Tet(y)')) === '∃y Tet(y)');
   t('identita',                 print(parse('a=b')) === 'a = b');
   t('disuguaglianza',           print(parse('a != b')) === '¬a = b');
-  t('falso',                    print(parse('#')) === '⊥');
+  t('falso',                    print(parse('^')) === '⊥');
+  t('# e\u2019 diverso da',        print(parse('x # y')) === '¬x = y');
+  t('parentesi quadre',         print(parse('~[P | Q]')) === '¬(P ∨ Q)');
+  t('quadre e tonde miste',     print(parse('@x [(Cube(x) & Small(x)) $ Tet(x)]')) === '∀x (Cube(x) ∧ Small(x) → Tet(x))');
   t('round-trip',               print(parse(print(parse('P & (Q & R)')))) === 'P ∧ (Q ∧ R)');
 
   t('errore: operatore pendente', tryParse('P &').ok === false);
@@ -187,4 +191,117 @@ export default function suite(t) {
     new Line({ text:'Cube(b)', rule:'= Elim', citations:'1,2' })
   ]});
   t('prova: = Elim ok',         check.execute({ proof:p9 }).lines[2].status === 'ok');
+
+  // prova appena creata: nessun verdetto, non "righe non giustificate"
+  resetIds(1);
+  t('prova vuota: nessun verdetto', check.execute({ proof: new Proof() }).verdict.kind === 'empty');
+
+  // una riga vuota in coda non rende incompleta una prova finita
+  resetIds(1);
+  const p10 = new Proof({ goal:'P', items: [
+    new Line({ text:'P ∧ Q', rule:Justification.PREMISE }),
+    new Line({ text:'P', rule:'∧ Elim', citations:'1' }),
+    new Line()
+  ]});
+  t('riga vuota in coda ignorata', check.execute({ proof: p10 }).verdict.kind === 'complete');
+
+  /* ---------- regola dei blocchi grandi ---------- */
+  const B = (id, size, x, y) => new Block({ id, shape: Shape.CUBE, size, x, y });
+  const throws = fn => { try { fn(); return false; } catch (e) { return e instanceof WorldInvariantViolation; } };
+
+  t('grande: vicino ortogonale vietato',  throws(() => new World([B(1,Size.LARGE,3,3), B(2,Size.SMALL,4,3)])));
+  t('grande: vicino diagonale vietato',   throws(() => new World([B(1,Size.LARGE,3,3), B(2,Size.SMALL,4,4)])));
+  t('grande: vale anche se il grande e\u2019 il secondo', throws(() => new World([B(1,Size.SMALL,2,2), B(2,Size.LARGE,3,3)])));
+  t('grande: due grandi vicini vietati',  throws(() => new World([B(1,Size.LARGE,0,0), B(2,Size.LARGE,1,1)])));
+  t('grande: a distanza 2 consentito',    !throws(() => new World([B(1,Size.LARGE,3,3), B(2,Size.LARGE,5,5)])));
+  t('grande in angolo: area 2x2',         throws(() => new World([B(1,Size.LARGE,0,0), B(2,Size.SMALL,1,0)])));
+  t('medi vicini consentiti',             !throws(() => new World([B(1,Size.MEDIUM,3,3), B(2,Size.MEDIUM,4,4)])));
+  t('stessa casella vietata',             throws(() => new World([B(1,Size.SMALL,3,3), B(2,Size.SMALL,3,3)])));
+
+  const tableTop = [ { id:1, size:Size.LARGE, x:3, y:3 }, { id:2, size:Size.SMALL, x:6, y:6 } ];
+  t('posizionamento: casella nell\u2019area del grande', World.placementConflict(tableTop, { x:2, y:4, size:Size.SMALL })?.reason === PLACEMENT.LARGE_NEIGHBOUR);
+  t('posizionamento: casella libera',     World.placementConflict(tableTop, { x:5, y:3, size:Size.SMALL }) === null);
+  t('posizionamento: crescere a grande lontano dagli altri', World.placementConflict(tableTop, { x:6, y:6, size:Size.LARGE }, 2) === null);
+  t('posizionamento: spostare il grande su se stesso', World.placementConflict(tableTop, { x:3, y:3, size:Size.LARGE }, 1) === null);
+  t('posizionamento: grande accanto al piccolo', World.placementConflict(tableTop, { x:5, y:5, size:Size.LARGE })?.blocking.id === 2);
+
+  // Large(x) e Adjoins(x, y) non possono mai essere veri insieme in un mondo valido
+  const legal = new World([B(1,Size.LARGE,1,1), B(2,Size.SMALL,4,1), B(3,Size.MEDIUM,5,1)]);
+  t('Adjoins tra non grandi resta possibile', legal.satisfies(parse('\u2203x \u2203y Adjoins(x, y)')));
+  t('nessun grande ha vicini',            legal.satisfies(parse('\u00ac\u2203x \u2203y (Large(x) \u2227 Adjoins(x, y))')));
+
+  /* ---------- premesse e assunzioni solo dove sono lecite ---------- */
+  const statusOf = (proof, i) => check.execute({ proof }).lines[i];
+
+  // il caso dello screenshot: "Assunz" su righe del livello principale
+  resetIds(1);
+  const fake = new Proof({ goal:'Q', items: [
+    new Line({ text:'P', rule:Justification.PREMISE }),
+    new Line({ text:'Q', rule:Justification.ASSUMPTION }),
+  ]});
+  t('assunzione fuori da sottodim.: rifiutata', statusOf(fake, 1).status === 'invalid');
+  t('assunzione fuori da sottodim.: spiegata',  statusOf(fake, 1).message.includes('Sottodimostrazione'));
+  t('assunzione fuori da sottodim.: prova non completa', check.execute({ proof: fake }).verdict.kind !== 'complete');
+
+  resetIds(1);
+  const second = new Proof({ items: [
+    new Subproof({ items: [
+      new Line({ text:'P', rule:Justification.ASSUMPTION }),
+      new Line({ text:'Q', rule:Justification.ASSUMPTION })
+    ]})
+  ]});
+  t('seconda assunzione nella stessa sottodim.: rifiutata', statusOf(second, 1).status === 'invalid');
+  t('prima assunzione della sottodim.: accettata',          statusOf(second, 0).status === 'ok');
+
+  resetIds(1);
+  const late = new Proof({ items: [
+    new Line({ text:'P ∧ Q', rule:Justification.PREMISE }),
+    new Line({ text:'P', rule:'∧ Elim', citations:'1' }),
+    new Line({ text:'R', rule:Justification.PREMISE })
+  ]});
+  t('premessa dopo una riga derivata: rifiutata', statusOf(late, 2).status === 'invalid');
+
+  resetIds(1);
+  const nested = new Proof({ items: [
+    new Subproof({ items: [
+      new Line({ text:'P', rule:Justification.ASSUMPTION }),
+      new Line({ text:'Q', rule:Justification.PREMISE })
+    ]})
+  ]});
+  t('premessa dentro una sottodim.: rifiutata', statusOf(nested, 1).status === 'invalid');
+
+  /* ---------- costanti delle sottodimostrazioni ---------- */
+  resetIds(1);
+  const withNames = new Proof({ goal:'Cube(c)', items: [
+    new Line({ text:'Larger(a, b)', rule:Justification.PREMISE }),
+    new Subproof({ constant:'d', items: [ new Line({ rule:Justification.ASSUMPTION }) ] })
+  ]});
+  t('nomi in uso: righe, obiettivo, costanti', [...namesInUse(withNames)].sort().join() === 'a,b,c,d');
+  t('costante nuova: prima libera fra a-f', freshConstant(withNames) === 'e');
+  resetIds(1);
+  const crowded = new Proof({ items: [ new Line({ text:'Between(a, b, c) ∧ Between(d, e, f)', rule:Justification.PREMISE }) ] });
+  t('costante nuova: dopo f si passa a n1', freshConstant(crowded) === 'n1');
+  t('x non e\u2019 un nome di costante', !isConstantName('x') && !isConstantName('z2'));
+  t('a e n1 sono nomi di costante', isConstantName('a') && isConstantName('n1'));
+
+  // ∀ Intro con costante dichiarata e riga di assunzione lasciata vuota
+  resetIds(1);
+  const universal = new Proof({ goal:'∀x (Cube(x) ∨ ¬Cube(x))', items: [
+    new Subproof({ constant:'c', items: [
+      new Line({ rule:Justification.ASSUMPTION }),
+      new Line({ text:'Cube(c) ∨ ¬Cube(c)', rule:'Taut Con' })
+    ]}),
+    new Line({ text:'∀x (Cube(x) ∨ ¬Cube(x))', rule:'∀ Intro', citations:'1-2' })
+  ]});
+  t('∀ Intro con sola costante: prova completa', check.execute({ proof: universal }).verdict.kind === 'complete');
+
+  resetIds(1);
+  const badName = new Proof({ items: [
+    new Subproof({ constant:'x', items: [
+      new Line({ rule:Justification.ASSUMPTION }),
+      new Line({ text:'Cube(x) ∨ ¬Cube(x)', rule:'Taut Con' })
+    ]}),
+    new Line({ text:'∀y (Cube(y) ∨ ¬Cube(y))', rule:'∀ Intro', citations:'1-2' })
+  ]});
+  t('costante con nome di variabile: rifiutata', statusOf(badName, 2).status === 'invalid');
 }

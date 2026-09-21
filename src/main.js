@@ -19,8 +19,17 @@ import { ThemeSwitcher } from './infrastructure/web/ThemeSwitcher.js';
 import { TruthTableView } from './infrastructure/web/TruthTableView.js';
 import { WorldView } from './infrastructure/web/WorldView.js';
 import { ProofView } from './infrastructure/web/ProofView.js';
+import { RulesPdfPanel } from './infrastructure/web/RulesPdfPanel.js';
+import { SentenceLibraryMenu } from './infrastructure/web/SentenceLibraryMenu.js';
+import { BlocksKeypad } from './infrastructure/web/BlocksKeypad.js';
+import { SenFileImporter } from './infrastructure/import/SenFileImporter.js';
+import { BrowserFileStore } from './infrastructure/persistence/BrowserFileStore.js';
 
 const repository = new LocalStorageWorkspaceRepository();
+const fileStore  = new BrowserFileStore();
+
+/* Versione 2 del formato: le versioni precedenti salvavano gli esempi precaricati. */
+const SCHEMA_VERSION = 2;
 
 const buildTruthTable = new BuildTruthTable();
 const evaluateInWorld = new EvaluateInWorld();
@@ -28,13 +37,24 @@ const checkProof      = new CheckProof();
 
 async function bootstrap() {
   console.info('Verum \u00a9 2026 Liam Michael Boland. Tutti i diritti riservati.');
+  await repository.resetIfOutdated(SCHEMA_VERSION, ['truth-table', 'world', 'proof']);
   new Router().start();
   new SymbolPalette().start();
   await new ThemeSwitcher({ repository }).start();
 
   await new TruthTableView({ buildTruthTable, repository }).start();
-  await new WorldView({ evaluateInWorld, repository }).start();
+  const worldView = new WorldView({ evaluateInWorld, repository });
+  await worldView.start();
+  new BlocksKeypad({ host: document.getElementById('wd-keypad'), fields: document.getElementById('wd-rows') }).start();
+  await new SentenceLibraryMenu({
+    button: document.getElementById('wd-library'),
+    host: document.getElementById('wd-libpop'),
+    repository,
+    importer: new SenFileImporter(),
+    onPick: collection => worldView.loadCollection(collection)
+  }).start();
   await new ProofView({ checkProof, repository }).start();
+  await new RulesPdfPanel({ host: document.getElementById('pf-rules'), fileStore }).start();
 }
 
 bootstrap().catch(error => {

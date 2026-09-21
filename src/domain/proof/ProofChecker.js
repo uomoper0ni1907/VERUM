@@ -41,8 +41,8 @@ export class ProofChecker {
     const formula = formulas.get(line.id);
     if (!formula) return { status: Status.MALFORMED, message: `formula non valida: ${tryParse(line.text).error}` };
 
-    if (line.rule === Justification.PREMISE || line.rule === Justification.ASSUMPTION)
-      return { status: Status.OK };
+    if (line.rule === Justification.PREMISE)    return this.checkPremise(entry, proof);
+    if (line.rule === Justification.ASSUMPTION) return this.checkAssumption(entry);
     if (!line.rule) return { status: Status.UNJUSTIFIED };
 
     const rule = RULES.get(line.rule);
@@ -53,6 +53,35 @@ export class ProofChecker {
 
     const outcome = rule.check({ conclusion: formula, lines: resolved.lines, subproofs: resolved.subproofs });
     return outcome.ok ? { status: Status.OK } : { status: Status.INVALID, message: outcome.reason };
+  }
+
+  /**
+   * Una premessa sta solo al livello principale, prima di ogni riga derivata:
+   * e' il punto di partenza dichiarato, non una mossa della prova.
+   */
+  checkPremise(entry, proof) {
+    const container = entry.chain[entry.chain.length - 1];
+    if (container !== proof)
+      return { status: Status.INVALID, message: 'una premessa non puo\u2019 stare dentro una sottodimostrazione: li\u2019 si usa un\u2019assunzione' };
+    const position = proof.items.indexOf(entry.line);
+    const derivedBefore = proof.items.slice(0, position)
+      .some(item => item.kind !== 'line' || item.rule !== Justification.PREMISE);
+    return derivedBefore
+      ? { status: Status.INVALID, message: 'le premesse vanno tutte in cima, prima di ogni riga derivata' }
+      : { status: Status.OK };
+  }
+
+  /**
+   * Un'assunzione e' lecita solo come prima riga di una sottodimostrazione:
+   * e' proprio l'apertura della sottodimostrazione a renderla temporanea.
+   */
+  checkAssumption(entry) {
+    const container = entry.chain[entry.chain.length - 1];
+    if (container.kind !== 'subproof')
+      return { status: Status.INVALID, message: 'un\u2019assunzione e\u2019 lecita solo come prima riga di una sottodimostrazione: creala con \u201c+ Sottodimostrazione\u201d' };
+    if (container.items[0] !== entry.line)
+      return { status: Status.INVALID, message: 'solo la prima riga di una sottodimostrazione e\u2019 un\u2019assunzione' };
+    return { status: Status.OK };
   }
 
   resolveCitations(citations, entry, index, formulas, proof) {
@@ -106,14 +135,17 @@ export class ProofChecker {
   }
 
   verdictFor(proof, index, formulas, results) {
-    if (!index.lines.length) return { kind: 'empty', message: '' };
-    const everyLineOk = index.lines.every(l => results.get(l.line.id)?.status === Status.OK);
+    // le righe ancora vuote sono spazio di lavoro, non errori: non contano
+    const written = index.lines.filter(l => results.get(l.line.id)?.status !== Status.EMPTY);
+    if (!written.length) return { kind: 'empty', message: '' };
+    const everyLineOk = written.every(l => results.get(l.line.id)?.status === Status.OK);
     if (!everyLineOk) return { kind: 'incomplete', message: 'ci sono righe non giustificate' };
 
     const goal = tryParse(proof.goal);
     if (!goal.ok) return { kind: 'sound', message: 'tutte le righe sono corrette' };
 
-    const last = proof.items[proof.items.length - 1];
+    const topLevel = proof.items.filter(i => i.kind !== 'line' || i.text.trim());
+    const last = topLevel[topLevel.length - 1];
     const lastFormula = last && last.kind === 'line' ? formulas.get(last.id) : null;
     return lastFormula && equals(lastFormula, goal.formula)
       ? { kind: 'complete', message: 'prova completa' }

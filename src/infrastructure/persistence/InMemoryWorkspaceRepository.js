@@ -11,4 +11,5 @@ export class InMemoryWorkspaceRepository extends WorkspaceRepository {
   async load(key)        { return this.store.has(key) ? structuredClone(this.store.get(key)) : null; }
   async save(key, value) { this.store.set(key, structuredClone(value)); }
   async remove(key)      { this.store.delete(key); }
+  async resetIfOutdated() { return false; }
 }

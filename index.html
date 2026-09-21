@@ -236,6 +236,14 @@ table.tt tbody tr:hover{background:var(--row-hover)}
 .coord.row{top:4px;left:5px}
 .coord.col{bottom:4px;right:5px}
 .cell.drop{box-shadow:inset 0 0 0 3px var(--blue)}
+/* area occupata da un blocco grande: tratteggio neutro, leggibile su ogni tema */
+.cell.blocked{cursor:not-allowed}
+.cell.blocked::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 6px,rgba(120,120,120,.28) 6px 8px)}
+.cell.nodrop{box-shadow:inset 0 0 0 3px var(--red)}
+.cell.conflict{box-shadow:inset 0 0 0 3px var(--red), inset 0 0 16px var(--red-soft)}
+.seg:disabled{opacity:.4;cursor:not-allowed}
+.inspector .notice{margin:0 0 10px}
 .cell.selcell{box-shadow:inset 0 0 0 3px var(--blue), inset 0 0 18px var(--blue-soft)}
 .blk{width:100%;height:100%;display:grid;place-items:center;cursor:grab;position:relative;z-index:1}
 .blk svg{display:block;filter:var(--pc-drop);transition:transform .12s ease-out}
@@ -270,7 +278,32 @@ table.tt tbody tr:hover{background:var(--row-hover)}
 .pstat{width:18px;flex:none;text-align:center;font-size:14px}
 .pstat.ok{color:var(--blue);text-shadow:var(--glow-text)} .pstat.no{color:var(--red)}
 .pmsg{font-family:var(--f-ui);font-size:11.5px;color:var(--red);margin:0 0 3px 40px}
-.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-radius:2px;padding:0 7px;background:var(--field);width:52px;text-align:center}
+.cpick{position:relative;display:inline-flex;align-items:stretch;flex:none}
+.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-right:0;border-radius:2px 0 0 2px;
+  padding:0 6px;background:var(--field);color:var(--ink);width:46px;text-align:center}
+.pconst:focus{outline:none;box-shadow:0 0 0 2px var(--blue-soft)}
+.cpick-toggle{border:1.5px solid var(--ink);border-radius:0 2px 2px 0;background:var(--panel-2);color:var(--ink2);
+  padding:0 4px;font-size:11px;line-height:1}
+.cpick-menu{position:absolute;z-index:35;top:calc(100% + 4px);left:0;display:grid;grid-template-columns:repeat(6,30px);gap:3px;
+  padding:6px;background:var(--panel);border:1px solid var(--rule);border-radius:5px;box-shadow:0 10px 24px rgba(0,0,0,.18)}
+.cpick-menu[hidden]{display:none}
+.cpick-opt{height:28px;border:1px solid var(--rule2);border-radius:3px;background:var(--panel-2);color:var(--ink);
+  font-family:var(--f-txt);font-size:15px}
+.cpick-opt:hover{background:var(--blue-soft);border-color:var(--blue-line)}
+.cpick-opt.wide{grid-column:span 3;font-family:var(--f-ui);font-size:12.5px}
+.cpick-opt.new{color:var(--blue);font-weight:500}
+.cpick-opt.used{color:var(--ink3);text-decoration:line-through}
+
+/* ---------- tastierino dei blocchi ---------- */
+.keypad{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.kp-groups{display:flex;flex-wrap:wrap;gap:6px 12px}
+.kp-group{display:flex;flex-wrap:wrap;gap:3px}
+.kp-key{font-family:var(--f-txt);font-size:16px;line-height:1;width:28px;height:28px;display:grid;place-items:center;
+  background:var(--panel-2);border:1px solid var(--rule2);border-radius:var(--r);color:var(--ink)}
+.kp-preds{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px}
+.kp-pred{font-family:var(--f-ui);font-size:12.5px;padding:5px 4px;background:var(--panel-2);border:1px solid var(--rule2);
+  border-radius:var(--r);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kp-key:hover,.kp-pred:hover{background:var(--blue-soft);border-color:var(--blue-line)}
 .goalbar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}
 .toolrow{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
 .hint{font-size:12.5px;color:var(--ink3);line-height:1.6}
@@ -280,6 +313,49 @@ details.docs summary{font-size:13px;color:var(--ink2);cursor:pointer}
 details.docs table{border-collapse:collapse;font-size:12.5px;margin-top:8px;width:100%}
 details.docs td{padding:2px 6px;border-bottom:1px solid var(--rule2);vertical-align:top}
 details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:var(--ink)}
+/* ---------- pannello PDF delle regole ---------- */
+.cols.pf-cols{grid-template-columns:minmax(0,1fr) minmax(340px,42vw)}
+.rulespane{display:flex;flex-direction:column;gap:12px;align-self:start;position:sticky;top:57px;height:calc(100vh - 57px)}
+.rulespane .cite{margin:0;padding:0;border:0}
+.pdfpanel{flex:1;display:flex;flex-direction:column;min-height:0}
+.pdfdrop{flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;
+  padding:28px;border:1.5px dashed var(--rule);border-radius:6px;background:var(--panel-2);cursor:pointer;min-height:260px}
+.pdfdrop:hover,.pdfdrop.over{border-color:var(--blue);background:var(--blue-soft)}
+.pdfdrop-title{font-family:var(--f-txt);font-size:22px;margin:0;color:var(--ink)}
+.pdfdrop .hint{margin:0;max-width:38ch}
+.pdfbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.pdfname{flex:1;min-width:0;font-size:13px;color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pdfbar a.btn{text-decoration:none;color:var(--ink)}
+.pdfframe{flex:1;width:100%;min-height:420px;border:1px solid var(--rule);border-radius:4px;background:#fff}
+@media(max-width:980px){
+  .cols.pf-cols{grid-template-columns:1fr}
+  .rulespane{position:static;height:auto}
+  .pdfframe{height:75vh;flex:none}
+}
+/* ---------- raccolte di enunciati ---------- */
+.libwrap{position:relative;display:inline-block}
+.libpop{position:absolute;z-index:40;top:calc(100% + 6px);left:0;width:min(400px,86vw);max-height:min(62vh,520px);
+  display:flex;flex-direction:column;gap:8px;padding:12px;background:var(--panel);color:var(--ink);
+  border:1px solid var(--rule);border-radius:6px;box-shadow:0 12px 32px rgba(0,0,0,.18);overflow:hidden}
+.libpop>div:not(.libfoot){display:flex;flex-direction:column;gap:8px;min-height:0;flex:1}
+.libpop.over,.libdrop.over{outline:2px dashed var(--blue);outline-offset:-4px}
+.libsearch{width:100%;font-family:var(--f-ui);font-size:14px}
+.liblist{overflow:auto;min-height:0;flex:1;display:flex;flex-direction:column;border:1px solid var(--rule2);border-radius:4px}
+.libitem{display:flex;align-items:baseline;gap:10px;width:100%;text-align:left;background:none;border:0;
+  border-bottom:1px solid var(--rule2);padding:7px 10px;font-size:13.5px;color:var(--ink)}
+.libitem:last-child{border-bottom:0}
+.libitem:hover,.libitem:focus-visible{background:var(--blue-soft);outline:none}
+.libname{flex:1;min-width:0;font-family:var(--f-txt);font-size:15px}
+.libcount{font-size:11.5px;color:var(--ink3)}
+.libfoot{display:flex;gap:6px;justify-content:space-between}
+.libdrop{display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding:6px 2px}
+.libtitle{font-family:var(--f-txt);font-size:18px;margin:0}
+.libdrop .hint{margin:0}
+.libmsg{margin:0;font-size:12.5px;color:var(--blue)}
+.libdetails summary{font-size:12px;color:var(--ink3);cursor:pointer}
+.libdetails .hint{margin:4px 0 0;font-size:12px}
+.snote{margin:-2px 0 8px 30px;font-size:12px;line-height:1.45;color:var(--ink3);font-style:italic}
+.collname{font-weight:400;color:var(--ink2)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -402,7 +478,9 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
           <tr><td>∨ | </td><td>disgiunzione</td></tr>
           <tr><td>→ $ -&gt; </td><td>condizionale</td></tr>
           <tr><td>↔ % &lt;-&gt; </td><td>bicondizionale</td></tr>
-          <tr><td>⊥ # </td><td>contraddizione</td></tr>
+          <tr><td>⊥ ^ </td><td>contraddizione</td></tr>
+          <tr><td>≠ # </td><td>diverso da, es. <code>a # b</code></td></tr>
+          <tr><td>[ ] </td><td>come le parentesi tonde</td></tr>
         </table>
       </details>
     </div>
@@ -424,20 +502,24 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     <button class="btn" id="wd-clearworld">Svuota mondo</button>
     <button class="btn primary" id="wd-eval">Valuta enunciati</button>
   </div>
-  <div class="cols" style="grid-template-columns:1fr minmax(330px,430px)">
+  <div class="cols" style="grid-template-columns:1fr minmax(360px,460px)">
     <div class="pane">
       <div class="boardwrap">
         <div class="boardframe"><div class="board" id="wd-board"></div></div>
-        <p class="legend">Trascina un blocco per spostarlo, clic su una casella vuota per aggiungerne uno, clic su un blocco per selezionarlo.<br>La riga 1 è il <b>fronte</b> del tavolo, la colonna 1 è la <b>sinistra</b>.</p>
+        <p class="legend">Trascina un blocco per spostarlo, clic su una casella vuota per aggiungerne uno, clic su un blocco per selezionarlo.<br>La riga 1 è il <b>fronte</b> del tavolo, la colonna 1 è la <b>sinistra</b>.<br>Un blocco grande occupa anche le caselle intorno, tratteggiate: lì non si può mettere nulla.</p>
         <div class="inspector" id="wd-insp" style="width:min(560px,100%)"></div>
       </div>
     </div>
     <div class="pane">
-      <h3>Enunciati</h3>
-      <div class="palette" data-target="wd"></div>
+      <h3>Enunciati<span id="wd-collection" class="collname"></span></h3>
+      <div class="keypad" id="wd-keypad"></div>
       <div id="wd-rows"></div>
       <div class="toolrow">
         <button class="btn sm" id="wd-add">+ Enunciato</button>
+        <span class="libwrap">
+          <button class="btn sm" id="wd-library">Carica sentences</button>
+          <span id="wd-libpop"></span>
+        </span>
         <button class="btn sm ghost" id="wd-clearsent">Svuota</button>
       </div>
       <details class="docs" open>
@@ -475,7 +557,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
     <button class="btn" id="pf-reset">Nuova prova</button>
     <button class="btn primary" id="pf-check">Verifica prova</button>
   </div>
-  <div class="cols" style="grid-template-columns:1fr minmax(280px,340px)">
+  <div class="cols pf-cols">
     <div class="pane">
       <div class="goalbar">
         <span style="font-size:12.5px;color:var(--ink3)">Obiettivo</span>
@@ -490,43 +572,15 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
         <button class="btn sm" id="pf-addsub">+ Sottodimostrazione</button>
       </div>
     </div>
-    <div class="pane">
-      <h3>Come si cita</h3>
-      <p class="hint">Nel campo <b>rif.</b> scrivi i numeri di riga separati da virgola: <code>1,2</code>.<br>
-      Per citare una <b>sottodimostrazione</b> usa l'intervallo prima–ultima riga: <code>3-5</code>.<br>
-      Ogni riga si verifica da sola: il pallino a destra diventa blu quando la regola è applicata correttamente.</p>
-      <h3 style="margin-top:18px">Regole disponibili</h3>
-      <details class="docs" open>
-        <summary>Proposizionali</summary>
-        <table>
-          <tr><td>Reit</td><td>ripeti una riga accessibile</td></tr>
-          <tr><td>∧ Intro</td><td>da tutti i congiunti</td></tr>
-          <tr><td>∧ Elim</td><td>da una congiunzione a un congiunto</td></tr>
-          <tr><td>∨ Intro</td><td>da un disgiunto alla disgiunzione</td></tr>
-          <tr><td>∨ Elim</td><td>disgiunzione + una sottodim. per disgiunto</td></tr>
-          <tr><td>→ Intro</td><td>sottodim. da P a Q</td></tr>
-          <tr><td>→ Elim</td><td>P→Q e P</td></tr>
-          <tr><td>↔ Intro</td><td>due sottodim., P⇒Q e Q⇒P</td></tr>
-          <tr><td>↔ Elim</td><td>P↔Q e uno dei due lati</td></tr>
-          <tr><td>¬ Intro</td><td>sottodim. da P a ⊥</td></tr>
-          <tr><td>¬ Elim</td><td>da ¬¬P a P</td></tr>
-          <tr><td>⊥ Intro</td><td>P e ¬P</td></tr>
-          <tr><td>⊥ Elim</td><td>da ⊥ a qualsiasi cosa</td></tr>
-          <tr><td>Taut Con</td><td>conseguenza tautologica delle righe citate</td></tr>
-        </table>
+    <div class="pane rulespane">
+      <details class="docs cite">
+        <summary>Come si cita</summary>
+        <p class="hint">Nel campo <b>rif.</b> scrivi i numeri di riga separati da virgola: <code>1,2</code>.
+        Per citare una <b>sottodimostrazione</b> usa l'intervallo prima–ultima riga: <code>3-5</code>.
+        Per ∀ Intro e ∃ Elim dichiara la costante nuova nella casella squadrata della sottodimostrazione.
+        Il pallino a destra di ogni riga diventa blu quando la regola è applicata correttamente.</p>
       </details>
-      <details class="docs">
-        <summary>Quantificatori e identità</summary>
-        <table>
-          <tr><td>∀ Elim</td><td>da ∀x P(x) a P(c)</td></tr>
-          <tr><td>∀ Intro</td><td>sottodim. con costante nuova che prova P(c)</td></tr>
-          <tr><td>∃ Intro</td><td>da P(c) a ∃x P(x)</td></tr>
-          <tr><td>∃ Elim</td><td>∃x P(x) + sottodim. con costante nuova</td></tr>
-          <tr><td>= Intro</td><td>t = t, senza citazioni</td></tr>
-          <tr><td>= Elim</td><td>da P(a) e a=b a P(b)</td></tr>
-        </table>
-        <p class="hint" style="margin-top:8px">Per ∀ Intro e ∃ Elim, dichiara la costante nuova nella casella squadrata in cima alla sottodimostrazione.</p>
-      </details>
+      <div class="pdfpanel" id="pf-rules"></div>
     </div>
   </div>
   <footer class="foot"><span>© 2026 Liam Michael Boland</span><span>Tutti i diritti riservati</span></footer>

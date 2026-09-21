@@ -2,12 +2,15 @@
 // SPDX-License-Identifier: LicenseRef-Verum-Proprietary
 import domainSuite from './domain.test.mjs';
 import architectureSuite from './architecture.test.mjs';
+import importSuite from './import.test.mjs';
 
 let pass = 0, fail = 0;
 const t = (name, condition) => { condition ? pass++ : (fail++, console.log('  FALLITO:', name)); };
 
 console.log('Dominio e casi d\u2019uso');
 domainSuite(t);
+console.log('\nImportazione dei file del corso');
+await importSuite(t);
 const afterDomain = pass;
 
 console.log('\nConformita\u2019 architetturale');

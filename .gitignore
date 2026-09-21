@@ -38,6 +38,9 @@ LPL Software/
 *.sen
 *.wld
 New_Compressed*.zip
+*sentences*.zip
+# il PDF delle regole si carica nell'app dal proprio computer, non va nel repo
+FitchRules*.pdf
 
 # --- archivi usati per le marche temporali (tieni una copia fuori dal repo)
 *.tar

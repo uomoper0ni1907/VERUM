@@ -12,7 +12,7 @@ export class TruthTableView {
   constructor({ buildTruthTable, repository }) {
     this.buildTruthTable = buildTruthTable;
     this.repository = repository;
-    this.sentences = ['P → Q', 'P', 'Q'];
+    this.sentences = [''];
   }
 
   async start() {

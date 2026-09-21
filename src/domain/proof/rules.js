@@ -15,6 +15,7 @@ import { equals, substitute, freeTerms, conjuncts, disjuncts, equalsUpToSubstitu
 import { print } from '../language/Printer.js';
 import { isTautologicalConsequence } from '../truth/TruthTable.js';
 import { CONSTANTS } from '../world/Block.js';
+import { isConstantName } from './constants.js';
 
 const ok = () => ({ ok: true });
 const no = reason => ({ ok: false, reason });
@@ -184,6 +185,7 @@ rule('∀ Intro', ctx => {
   const bad = shape(ctx, 0, 1, 'cita una sola sottodimostrazione'); if (bad) return bad;
   const s = ctx.subproofs[0], c = ctx.conclusion;
   if (!s.constant) return no('la sottodimostrazione deve dichiarare una costante nuova nella casella squadrata');
+  if (!isConstantName(s.constant)) return no(`"${s.constant}" non puo\u2019 fare da costante: u, v, w, x, y, z sono variabili`);
   if (c.t !== 'all') return no('la conclusione deve essere universale');
   if (freeTerms(c).has(s.constant)) return no(`la costante ${s.constant} non puo\u2019 comparire nella conclusione`);
   if (!s.conclusion) return no('la sottodimostrazione e\u2019 vuota');
@@ -198,6 +200,7 @@ rule('∃ Elim', ctx => {
   const x = ctx.lines[0].formula, s = ctx.subproofs[0];
   if (x.t !== 'ex') return no(`la riga ${ctx.lines[0].number} non e\u2019 una generalizzazione esistenziale`);
   if (!s.constant) return no('la sottodimostrazione deve dichiarare una costante nuova');
+  if (!isConstantName(s.constant)) return no(`"${s.constant}" non puo\u2019 fare da costante: u, v, w, x, y, z sono variabili`);
   if (freeTerms(ctx.conclusion).has(s.constant)) return no(`la costante ${s.constant} non puo\u2019 comparire nella conclusione`);
   if (freeTerms(x).has(s.constant)) return no(`la costante ${s.constant} compare gia\u2019 nella riga citata: non e\u2019 nuova`);
   const expected = substitute(x.a, x.v, s.constant);

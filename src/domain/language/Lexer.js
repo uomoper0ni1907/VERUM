@@ -8,9 +8,14 @@ export class SyntaxError_ extends Error {
   constructor(message, position) { super(message); this.name = 'SyntaxError'; this.position = position; }
 }
 
+/*
+ * Le scorciatoie ASCII seguono la convenzione dei file di esercizio del corso,
+ * verificata sui 67 file .sen originali: # e' "diverso da" (x # y), ^ e' ⊥,
+ * [ ] valgono come parentesi tonde.
+ */
 const ONE_CHAR = [
   ['¬~!',  'not'], ['∧&', 'and'], ['∨|', 'or'],   ['→$', 'imp'],
-  ['↔%',   'iff'], ['∀@', 'all'], ['∃/', 'ex'],   ['⊥#', 'bot'], ['≠', 'neq'],
+  ['↔%',   'iff'], ['∀@', 'all'], ['∃/', 'ex'],   ['⊥^', 'bot'], ['≠#', 'neq'],
 ];
 
 export function tokenize(source) {
@@ -34,7 +39,9 @@ export function tokenize(source) {
     const hit = ONE_CHAR.find(([chars]) => chars.includes(c));
     if (hit) { push(hit[1]); i++; continue; }
 
-    if (c === '(' || c === ')' || c === ',') { push(c); i++; continue; }
+    if (c === '(' || c === '[') { push('('); i++; continue; }
+    if (c === ')' || c === ']') { push(')'); i++; continue; }
+    if (c === ',') { push(','); i++; continue; }
     if (c === '=') { push('eq'); i++; continue; }
 
     if (/[A-Za-z]/.test(c)) {
