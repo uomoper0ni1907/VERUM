@@ -1,0 +1,2243 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verum — strumenti per la logica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEEE8; --panel:#FBFBF8; --panel-2:#F4F5EF;
+  --ink:#16181A; --ink2:#5A605C; --ink3:#8B918C;
+  --rule:#CBCEC4; --rule2:#DCDED5;
+  --blue:#2033C4; --blue-soft:#E4E7FA; --blue-line:#B9C0F0;
+  --red:#A23429; --red-soft:#F7E5E2;
+  --amber:#7A5C0E; --amber-soft:#F3ECD6;
+  --r:3px;
+  --f-ui:"IBM Plex Sans",system-ui,sans-serif;
+  --f-txt:"Spectral",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.formula{font-family:var(--f-txt);font-size:1.06em;letter-spacing:.01em}
+
+/* ---------- shell ---------- */
+.screen{display:none}
+.screen.on{display:block}
+
+/* ---------- landing ---------- */
+.land{min-height:100vh;display:flex;flex-direction:column}
+.land-head{padding:clamp(28px,6vw,72px) clamp(20px,5vw,64px) 0;max-width:1240px;margin:0 auto;width:100%}
+.mark{font-family:var(--f-txt);font-weight:300;font-size:clamp(46px,9vw,104px);line-height:.92;letter-spacing:-.02em;margin:0}
+.mark em{font-style:italic;font-weight:300}
+.tagline{font-family:var(--f-txt);font-size:clamp(17px,2.2vw,21px);color:var(--ink2);max-width:46ch;margin:18px 0 0;line-height:1.55}
+.provenance{margin:26px 0 0;padding-top:16px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink3);max-width:64ch}
+.tools{max-width:1240px;margin:0 auto;width:100%;padding:clamp(26px,5vw,56px) clamp(20px,5vw,64px) 64px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+@media(max-width:880px){.tools{grid-template-columns:1fr}}
+.tool{background:var(--panel);border:0;text-align:left;padding:0;display:flex;flex-direction:column;min-height:420px;
+  transition:background .14s}
+.tool:hover,.tool:focus-visible{background:#fff}
+.tool:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tool-vis{flex:1;display:flex;align-items:center;justify-content:center;padding:26px;background:var(--panel-2);border-bottom:1px solid var(--rule2)}
+.tool-body{padding:22px 24px 26px}
+.tool h2{font-family:var(--f-txt);font-weight:400;font-size:27px;margin:0 0 2px;letter-spacing:-.01em}
+.tool .sub{font-size:12.5px;color:var(--ink3);margin:0 0 10px}
+.tool p{margin:0;color:var(--ink2);font-size:14px;line-height:1.55;max-width:34ch}
+.tool .go{margin-top:16px;font-size:13.5px;font-weight:500;color:var(--blue)}
+
+/* ---------- workspace chrome ---------- */
+.ws{min-height:100vh;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:14px;padding:10px clamp(14px,3vw,28px);background:var(--panel);
+  border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.back{background:none;border:1px solid var(--rule);border-radius:var(--r);padding:5px 11px;font-size:13px;color:var(--ink2)}
+.back:hover{border-color:var(--ink3);color:var(--ink)}
+.bar h1{font-family:var(--f-txt);font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em}
+.bar .spacer{flex:1}
+.btn{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);padding:6px 12px;font-size:13.5px}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#182aa8;border-color:#182aa8}
+.btn.ghost{background:none}
+.btn.sm{padding:3px 8px;font-size:12.5px}
+.btn:disabled{opacity:.42;cursor:default}
+
+.cols{flex:1;display:grid;gap:1px;background:var(--rule)}
+.pane{background:var(--panel);padding:18px clamp(14px,2.4vw,24px);overflow:auto}
+.pane h3{font-family:var(--f-ui);font-weight:600;font-size:12.5px;color:var(--ink3);margin:0 0 10px;letter-spacing:.02em}
+
+/* palette of symbols */
+.palette{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 12px}
+.palette button{font-family:var(--f-txt);font-size:16px;line-height:1;width:30px;height:28px;background:var(--panel-2);
+  border:1px solid var(--rule2);border-radius:var(--r);display:grid;place-items:center}
+.palette button:hover{background:var(--blue-soft);border-color:var(--blue-line)}
+
+/* formula rows */
+.frow{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.frow .n{width:22px;text-align:right;font-size:12px;color:var(--ink3);flex:none}
+.finput{flex:1;min-width:0;padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r);background:#fff;
+  font-family:var(--f-txt);font-size:15.5px}
+.finput:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.finput.bad{border-color:var(--red);background:var(--red-soft)}
+.xbtn{border:none;background:none;color:var(--ink3);font-size:16px;line-height:1;padding:2px 5px;border-radius:var(--r)}
+.xbtn:hover{color:var(--red);background:var(--red-soft)}
+.err{font-size:12.5px;color:var(--red);margin:1px 0 7px 30px}
+
+/* verdict chips */
+.chip{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 7px;border-radius:2px;border:1px solid}
+.chip.t{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue)}
+.chip.f{background:var(--red-soft);border-color:#E0BDB7;color:var(--red)}
+.chip.n{background:var(--panel-2);border-color:var(--rule);color:var(--ink3)}
+.chip.w{background:var(--amber-soft);border-color:#DECFA4;color:var(--amber)}
+
+/* truth table */
+.ttwrap{overflow:auto;border:1px solid var(--rule);border-radius:var(--r);background:#fff;max-height:60vh}
+table.tt{border-collapse:collapse;font-family:var(--f-txt);font-size:14.5px;white-space:nowrap}
+table.tt th,table.tt td{padding:3px 9px;text-align:center;border-bottom:1px solid var(--rule2)}
+table.tt thead th{position:sticky;top:0;background:var(--panel-2);border-bottom:1px solid var(--rule);font-weight:400;z-index:2}
+table.tt .sep{border-left:1px solid var(--rule)}
+table.tt td.ref{color:var(--ink3)}
+table.tt td.main{background:var(--blue-soft);font-weight:600}
+table.tt tbody tr:hover{background:#F7F8FD}
+.T{color:var(--blue)} .F{color:var(--red)}
+
+/* summary list */
+.sum{border:1px solid var(--rule);border-radius:var(--r);background:#fff;overflow:hidden}
+.sum .row{display:flex;gap:10px;align-items:baseline;padding:8px 11px;border-bottom:1px solid var(--rule2)}
+.sum .row:last-child{border-bottom:0}
+.sum .row .k{font-size:12.5px;color:var(--ink3);flex:none;width:auto}
+
+/* ---------- world grid ---------- */
+.board{--cell:56px;display:grid;grid-template-columns:repeat(8,var(--cell));grid-template-rows:repeat(8,var(--cell));
+  border:1px solid var(--ink);background:var(--rule2);gap:1px;width:max-content;margin:0 auto}
+.cell{background:#F3F4EE;position:relative;display:grid;place-items:center}
+.cell:nth-child(odd){background:#EAEBE4}
+.cell.drop{outline:2px solid var(--blue);outline-offset:-2px}
+.blk{width:100%;height:100%;display:grid;place-items:center;cursor:grab}
+.blk svg{display:block}
+.blk.sel svg .body{stroke:var(--blue);stroke-width:2.6}
+.blk .lbl{position:absolute;bottom:1px;right:3px;font-family:var(--f-txt);font-size:11px;color:var(--ink2)}
+.boardwrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.legend{font-size:12px;color:var(--ink3);text-align:center}
+.inspector{border:1px solid var(--rule);border-radius:var(--r);background:#fff;padding:12px}
+.inspector .grp{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.inspector label{font-size:12px;color:var(--ink3);display:block;margin-bottom:4px}
+.seg{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);padding:4px 10px;font-size:13px}
+.seg.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.nametags{display:flex;gap:4px;flex-wrap:wrap}
+.nametag{border:1px solid var(--rule);border-radius:var(--r);padding:2px 8px;font-family:var(--f-txt);font-size:14px;background:var(--panel-2)}
+.nametag.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* ---------- fitch ---------- */
+.proof{font-family:var(--f-txt);font-size:15.5px}
+.pline{display:flex;align-items:center;gap:0;padding:1px 0}
+.pnum{width:30px;text-align:right;padding-right:9px;font-family:var(--f-ui);font-size:11.5px;color:var(--ink3);flex:none;user-select:none}
+.scope{border-left:1.5px solid var(--ink);margin-left:0;padding-left:10px;flex:1;min-width:0}
+.sub{border-left:1.5px solid var(--ink);padding-left:10px;margin:3px 0}
+.sub>.assume{border-bottom:1.5px solid var(--ink);padding-bottom:3px;margin-bottom:3px}
+.pbody{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.pf{flex:1;min-width:80px;border:1px solid transparent;border-radius:var(--r);padding:3px 7px;background:#fff}
+.pf:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.pf.bad{background:var(--red-soft)}
+.prule{font-family:var(--f-ui);font-size:12.5px;width:118px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);background:var(--panel-2);padding:3px 4px}
+.prefs{font-family:var(--f-ui);font-size:12.5px;width:78px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);padding:3px 6px;background:#fff}
+.pstat{width:18px;flex:none;text-align:center;font-size:14px}
+.pstat.ok{color:var(--blue)} .pstat.no{color:var(--red)}
+.pmsg{font-family:var(--f-ui);font-size:11.5px;color:var(--red);margin:0 0 3px 40px}
+.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-radius:2px;padding:0 7px;background:#fff;width:52px;text-align:center}
+.goalbar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}
+.toolrow{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+.hint{font-size:12.5px;color:var(--ink3);line-height:1.6}
+.hint code{font-family:var(--f-txt);background:var(--panel-2);padding:0 4px;border-radius:2px;font-size:1.05em}
+details.docs{margin-top:16px;border-top:1px solid var(--rule2);padding-top:12px}
+details.docs summary{font-size:13px;color:var(--ink2);cursor:pointer}
+details.docs table{border-collapse:collapse;font-size:12.5px;margin-top:8px;width:100%}
+details.docs td{padding:2px 6px;border-bottom:1px solid var(--rule2);vertical-align:top}
+details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<!-- ============ LANDING ============ -->
+<section id="s-home" class="screen on">
+ <div class="land">
+  <div class="land-head">
+    <h1 class="mark">Verum</h1>
+    <p class="tagline">Tre strumenti per la logica del primo ordine: costruire tavole di verità, valutare enunciati in un mondo di blocchi, e costruire derivazioni in stile Fitch.</p>
+    <p class="provenance">Riscrittura web, indipendente e originale, ispirata al tipo di esercizi del corso. Non contiene né deriva da codice dei programmi didattici esistenti.</p>
+  </div>
+  <div class="tools">
+    <button class="tool" data-go="tt">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g font-family="Spectral,Georgia,serif" font-size="14">
+            <line x1="10" y1="26" x2="180" y2="26" stroke="#CBCEC4"/>
+            <line x1="76" y1="8" x2="76" y2="142" stroke="#CBCEC4"/>
+            <text x="24" y="20" fill="#5A605C">P</text><text x="50" y="20" fill="#5A605C">Q</text>
+            <text x="100" y="20" fill="#16181A">P → Q</text>
+            <g>
+              <text x="24" y="48" fill="#2033C4">T</text><text x="50" y="48" fill="#2033C4">T</text><rect x="113" y="36" width="18" height="18" fill="#E4E7FA"/><text x="118" y="48" fill="#2033C4">T</text>
+              <text x="24" y="72" fill="#2033C4">T</text><text x="50" y="72" fill="#A23429">F</text><rect x="113" y="60" width="18" height="18" fill="#E4E7FA"/><text x="118" y="72" fill="#A23429">F</text>
+              <text x="24" y="96" fill="#A23429">F</text><text x="50" y="96" fill="#2033C4">T</text><rect x="113" y="84" width="18" height="18" fill="#E4E7FA"/><text x="118" y="96" fill="#2033C4">T</text>
+              <text x="24" y="120" fill="#A23429">F</text><text x="50" y="120" fill="#A23429">F</text><rect x="113" y="108" width="18" height="18" fill="#E4E7FA"/><text x="118" y="120" fill="#2033C4">T</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Tavole</h2>
+        <p class="sub">Logica proposizionale</p>
+        <p>Tavole di verità complete, con validità dell'argomento, tautologie e soddisfacibilità congiunta.</p>
+        <div class="go">Apri Tavole</div>
+      </div>
+    </button>
+
+    <button class="tool" data-go="wd">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g stroke="#16181A" fill="#F3F4EE" stroke-width="1.2">
+            <path d="M15 118 L175 118 L140 70 L50 70 Z" fill="#EAEBE4"/>
+            <path d="M64 74 L96 74 L104 62 L72 62 Z" fill="none" stroke="#CBCEC4"/>
+            <path d="M96 96 L136 96 L152 74 L112 74 Z" fill="none" stroke="#CBCEC4"/>
+            <g><rect x="72" y="74" width="26" height="26" fill="#FBFBF8"/><path d="M72 74 L80 66 L106 66 L98 74" fill="#EDEEE8"/><path d="M98 74 L106 66 L106 92 L98 100" fill="#E3E4DC"/></g>
+            <g><path d="M124 106 L142 106 L133 82 Z" fill="#FBFBF8"/><path d="M133 82 L142 106 L150 98 Z" fill="#E3E4DC"/></g>
+            <g><path d="M36 112 l9-6 9 6 -3 10 -12 0 z" fill="#FBFBF8"/><path d="M45 106 l9 6 -3 10" fill="#E3E4DC"/></g>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Mondi</h2>
+        <p class="sub">Semantica del primo ordine</p>
+        <p>Costruisci un mondo di blocchi e verifica quali enunciati quantificati risultano veri al suo interno.</p>
+        <div class="go">Apri Mondi</div>
+      </div>
+    </button>
+
+    <button class="tool" data-go="pf">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g font-family="Spectral,Georgia,serif" font-size="13.5" fill="#16181A">
+            <line x1="34" y1="16" x2="34" y2="134" stroke="#16181A" stroke-width="1.6"/>
+            <line x1="34" y1="52" x2="120" y2="52" stroke="#16181A" stroke-width="1.6"/>
+            <text x="16" y="34" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">1</text>
+            <text x="44" y="34">P ∧ Q</text>
+            <text x="16" y="74" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">2</text>
+            <line x1="52" y1="62" x2="52" y2="122" stroke="#16181A" stroke-width="1.6"/>
+            <line x1="52" y1="82" x2="112" y2="82" stroke="#16181A" stroke-width="1.6"/>
+            <text x="62" y="76">¬R</text>
+            <text x="16" y="104" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">3</text>
+            <text x="62" y="106">⊥</text>
+            <text x="16" y="134" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">4</text>
+            <text x="44" y="136">R</text>
+            <text x="104" y="136" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">¬ Intro</text>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Derivazioni</h2>
+        <p class="sub">Deduzione naturale</p>
+        <p>Editor di prove in stile Fitch con sottodimostrazioni e verifica regola per regola.</p>
+        <div class="go">Apri Derivazioni</div>
+      </div>
+    </button>
+  </div>
+ </div>
+</section>
+<!-- ============ TAVOLE ============ -->
+<section id="s-tt" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Tavole</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="tt-example">Carica esempio</button>
+    <button class="btn primary" id="tt-build">Costruisci tavola</button>
+  </div>
+  <div class="cols" style="grid-template-columns:minmax(300px,390px) 1fr">
+    <div class="pane">
+      <h3>Enunciati</h3>
+      <div class="palette" data-target="tt"></div>
+      <div id="tt-rows"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="tt-add">+ Enunciato</button>
+        <button class="btn sm ghost" id="tt-clear">Svuota</button>
+      </div>
+      <p class="hint" style="margin-top:14px">L'ultimo enunciato è trattato come <b>conclusione</b>, i precedenti come premesse. Le lettere proposizionali sono qualsiasi identificatore, es. <code>P</code>, <code>Piove</code>, <code>Cube(a)</code>.</p>
+      <details class="docs">
+        <summary>Sintassi accettata</summary>
+        <table>
+          <tr><td>¬ ~ ! </td><td>negazione</td></tr>
+          <tr><td>∧ &amp; </td><td>congiunzione</td></tr>
+          <tr><td>∨ | </td><td>disgiunzione</td></tr>
+          <tr><td>→ $ -&gt; </td><td>condizionale</td></tr>
+          <tr><td>↔ % &lt;-&gt; </td><td>bicondizionale</td></tr>
+          <tr><td>⊥ # </td><td>contraddizione</td></tr>
+        </table>
+      </details>
+    </div>
+    <div class="pane" id="tt-out"></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ MONDI ============ -->
+<section id="s-wd" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Mondi</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="wd-example">Mondo di esempio</button>
+    <button class="btn" id="wd-clearworld">Svuota mondo</button>
+    <button class="btn primary" id="wd-eval">Valuta enunciati</button>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr minmax(330px,430px)">
+    <div class="pane">
+      <div class="boardwrap">
+        <div class="board" id="wd-board"></div>
+        <p class="legend">Trascina un blocco per spostarlo · clic su una casella vuota per aggiungerne uno · clic su un blocco per selezionarlo<br>La riga in basso è il <b>fronte</b> del tavolo, la colonna a sinistra è la <b>sinistra</b>.</p>
+        <div class="inspector" id="wd-insp" style="width:min(560px,100%)"></div>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Enunciati</h3>
+      <div class="palette" data-target="wd"></div>
+      <div id="wd-rows"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="wd-add">+ Enunciato</button>
+        <button class="btn sm ghost" id="wd-clearsent">Svuota</button>
+      </div>
+      <details class="docs" open>
+        <summary>Predicati del linguaggio</summary>
+        <table>
+          <tr><td>Tet(x) Cube(x) Dodec(x)</td><td>forma</td></tr>
+          <tr><td>Small(x) Medium(x) Large(x)</td><td>dimensione</td></tr>
+          <tr><td>SameSize(x,y) SameShape(x,y)</td><td>stessa dimensione / forma</td></tr>
+          <tr><td>SameRow(x,y) SameCol(x,y)</td><td>stessa riga / colonna</td></tr>
+          <tr><td>Larger(x,y) Smaller(x,y)</td><td>confronto di dimensione</td></tr>
+          <tr><td>LeftOf(x,y) RightOf(x,y)</td><td>colonna più a sinistra / destra</td></tr>
+          <tr><td>FrontOf(x,y) BackOf(x,y)</td><td>riga più avanti / indietro</td></tr>
+          <tr><td>Adjoins(x,y)</td><td>caselle contigue (non in diagonale)</td></tr>
+          <tr><td>Between(x,y,z)</td><td>x fra y e z sulla stessa linea</td></tr>
+          <tr><td>x = y</td><td>identità</td></tr>
+          <tr><td>∀x ∃x @x /x</td><td>quantificatori</td></tr>
+        </table>
+      </details>
+      <p class="hint" style="margin-top:10px">Le costanti disponibili sono <code>a b c d e f</code>. Assegnale ai blocchi nel pannello di ispezione. Un nome non assegnato rende l'enunciato indefinito.</p>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ DERIVAZIONI ============ -->
+<section id="s-pf" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Derivazioni</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="pf-example">Carica esempio</button>
+    <button class="btn" id="pf-reset">Nuova prova</button>
+    <button class="btn primary" id="pf-check">Verifica prova</button>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr minmax(280px,340px)">
+    <div class="pane">
+      <div class="goalbar">
+        <span style="font-size:12.5px;color:var(--ink3)">Obiettivo</span>
+        <input class="finput formula" id="pf-goal" style="max-width:340px" placeholder="es. P → (Q → P)">
+        <span id="pf-verdict"></span>
+      </div>
+      <div class="palette" data-target="pf"></div>
+      <div class="proof" id="pf-proof"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="pf-addprem">+ Premessa</button>
+        <button class="btn sm" id="pf-addline">+ Riga</button>
+        <button class="btn sm" id="pf-addsub">+ Sottodimostrazione</button>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Come si cita</h3>
+      <p class="hint">Nel campo <b>rif.</b> scrivi i numeri di riga separati da virgola: <code>1,2</code>.<br>
+      Per citare una <b>sottodimostrazione</b> usa l'intervallo prima–ultima riga: <code>3-5</code>.<br>
+      Ogni riga si verifica da sola: il pallino a destra diventa blu quando la regola è applicata correttamente.</p>
+      <h3 style="margin-top:18px">Regole disponibili</h3>
+      <details class="docs" open>
+        <summary>Proposizionali</summary>
+        <table>
+          <tr><td>Reit</td><td>ripeti una riga accessibile</td></tr>
+          <tr><td>∧ Intro</td><td>da tutti i congiunti</td></tr>
+          <tr><td>∧ Elim</td><td>da una congiunzione a un congiunto</td></tr>
+          <tr><td>∨ Intro</td><td>da un disgiunto alla disgiunzione</td></tr>
+          <tr><td>∨ Elim</td><td>disgiunzione + una sottodim. per disgiunto</td></tr>
+          <tr><td>→ Intro</td><td>sottodim. da P a Q</td></tr>
+          <tr><td>→ Elim</td><td>P→Q e P</td></tr>
+          <tr><td>↔ Intro</td><td>due sottodim., P⇒Q e Q⇒P</td></tr>
+          <tr><td>↔ Elim</td><td>P↔Q e uno dei due lati</td></tr>
+          <tr><td>¬ Intro</td><td>sottodim. da P a ⊥</td></tr>
+          <tr><td>¬ Elim</td><td>da ¬¬P a P</td></tr>
+          <tr><td>⊥ Intro</td><td>P e ¬P</td></tr>
+          <tr><td>⊥ Elim</td><td>da ⊥ a qualsiasi cosa</td></tr>
+          <tr><td>Taut Con</td><td>conseguenza tautologica delle righe citate</td></tr>
+        </table>
+      </details>
+      <details class="docs">
+        <summary>Quantificatori e identità</summary>
+        <table>
+          <tr><td>∀ Elim</td><td>da ∀x P(x) a P(c)</td></tr>
+          <tr><td>∀ Intro</td><td>sottodim. con costante nuova che prova P(c)</td></tr>
+          <tr><td>∃ Intro</td><td>da P(c) a ∃x P(x)</td></tr>
+          <tr><td>∃ Elim</td><td>∃x P(x) + sottodim. con costante nuova</td></tr>
+          <tr><td>= Intro</td><td>t = t, senza citazioni</td></tr>
+          <tr><td>= Elim</td><td>da P(a) e a=b a P(b)</td></tr>
+        </table>
+        <p class="hint" style="margin-top:8px">Per ∀ Intro e ∃ Elim, dichiara la costante nuova nella casella squadrata in cima alla sottodimostrazione.</p>
+      </details>
+    </div>
+  </div>
+ </div>
+</section>
+
+<script>
+(() => {
+  // src/domain/language/Lexer.js
+  var SyntaxError_ = class extends Error {
+    constructor(message, position) {
+      super(message);
+      this.name = "SyntaxError";
+      this.position = position;
+    }
+  };
+  var ONE_CHAR = [
+    ["\xAC~!", "not"],
+    ["\u2227&", "and"],
+    ["\u2228|", "or"],
+    ["\u2192$", "imp"],
+    ["\u2194%", "iff"],
+    ["\u2200@", "all"],
+    ["\u2203/", "ex"],
+    ["\u22A5#", "bot"],
+    ["\u2260", "neq"]
+  ];
+  function tokenize(source) {
+    const out = [];
+    let i = 0;
+    const push = (kind, value) => out.push({ kind, value, position: i });
+    while (i < source.length) {
+      const c = source[i];
+      if (/\s/.test(c)) {
+        i++;
+        continue;
+      }
+      if (source.startsWith("<->", i) || source.startsWith("<=>", i)) {
+        push("iff");
+        i += 3;
+        continue;
+      }
+      if (source.startsWith("_|_", i)) {
+        push("bot");
+        i += 3;
+        continue;
+      }
+      const two = source.substr(i, 2);
+      if (two === "->" || two === "=>") {
+        push("imp");
+        i += 2;
+        continue;
+      }
+      if (two === "/\\") {
+        push("and");
+        i += 2;
+        continue;
+      }
+      if (two === "\\/") {
+        push("or");
+        i += 2;
+        continue;
+      }
+      if (two === "!=" || two === "~=") {
+        push("neq");
+        i += 2;
+        continue;
+      }
+      const hit = ONE_CHAR.find(([chars]) => chars.includes(c));
+      if (hit) {
+        push(hit[1]);
+        i++;
+        continue;
+      }
+      if (c === "(" || c === ")" || c === ",") {
+        push(c);
+        i++;
+        continue;
+      }
+      if (c === "=") {
+        push("eq");
+        i++;
+        continue;
+      }
+      if (/[A-Za-z]/.test(c)) {
+        let j = i;
+        while (j < source.length && /[A-Za-z0-9_]/.test(source[j])) j++;
+        push("identifier", source.slice(i, j));
+        i = j;
+        continue;
+      }
+      throw new SyntaxError_(`carattere non riconosciuto: "${c}"`, i);
+    }
+    push("end");
+    return out;
+  }
+
+  // src/domain/language/Formula.js
+  var Sym = Object.freeze({
+    not: "\xAC",
+    and: "\u2227",
+    or: "\u2228",
+    imp: "\u2192",
+    iff: "\u2194",
+    all: "\u2200",
+    ex: "\u2203",
+    bot: "\u22A5"
+  });
+  var Bot = () => Object.freeze({ t: "bot" });
+  var Atom = (p, args = []) => Object.freeze({ t: "atom", p, args: Object.freeze([...args]) });
+  var Eq = (l, r) => Object.freeze({ t: "eq", l, r });
+  var Not = (a) => Object.freeze({ t: "not", a });
+  var And = (l, r) => Object.freeze({ t: "and", l, r });
+  var Or = (l, r) => Object.freeze({ t: "or", l, r });
+  var Imp = (l, r) => Object.freeze({ t: "imp", l, r });
+  var Iff = (l, r) => Object.freeze({ t: "iff", l, r });
+  var All = (v, a) => Object.freeze({ t: "all", v, a });
+  var Ex = (v, a) => Object.freeze({ t: "ex", v, a });
+  function equals(a, b, ea = {}, eb = {}) {
+    if (a.t !== b.t) return false;
+    switch (a.t) {
+      case "bot":
+        return true;
+      case "eq":
+        return termEquals(a.l, b.l, ea, eb) && termEquals(a.r, b.r, ea, eb);
+      case "atom":
+        return a.p === b.p && a.args.length === b.args.length && a.args.every((x, i) => termEquals(x, b.args[i], ea, eb));
+      case "not":
+        return equals(a.a, b.a, ea, eb);
+      case "and":
+      case "or":
+      case "imp":
+      case "iff":
+        return equals(a.l, b.l, ea, eb) && equals(a.r, b.r, ea, eb);
+      case "all":
+      case "ex": {
+        const d = (ea.__d || 0) + 1;
+        return equals(a.a, b.a, { ...ea, __d: d, [a.v]: d }, { ...eb, __d: d, [b.v]: d });
+      }
+    }
+    return false;
+  }
+  function termEquals(x, y, ea, eb) {
+    const dx = ea[x], dy = eb[y];
+    if (dx === void 0 && dy === void 0) return x === y;
+    return dx !== void 0 && dy !== void 0 && dx === dy;
+  }
+  function substitute(f, v, t) {
+    switch (f.t) {
+      case "bot":
+        return f;
+      case "eq":
+        return Eq(f.l === v ? t : f.l, f.r === v ? t : f.r);
+      case "atom":
+        return Atom(f.p, f.args.map((a) => a === v ? t : a));
+      case "not":
+        return Not(substitute(f.a, v, t));
+      case "and":
+        return And(substitute(f.l, v, t), substitute(f.r, v, t));
+      case "or":
+        return Or(substitute(f.l, v, t), substitute(f.r, v, t));
+      case "imp":
+        return Imp(substitute(f.l, v, t), substitute(f.r, v, t));
+      case "iff":
+        return Iff(substitute(f.l, v, t), substitute(f.r, v, t));
+      case "all":
+        return f.v === v ? f : All(f.v, substitute(f.a, v, t));
+      case "ex":
+        return f.v === v ? f : Ex(f.v, substitute(f.a, v, t));
+    }
+  }
+  function freeTerms(f, acc = /* @__PURE__ */ new Set(), bound = /* @__PURE__ */ new Set()) {
+    const add = (x) => {
+      if (!bound.has(x)) acc.add(x);
+    };
+    switch (f.t) {
+      case "bot":
+        break;
+      case "eq":
+        add(f.l);
+        add(f.r);
+        break;
+      case "atom":
+        f.args.forEach(add);
+        break;
+      case "not":
+        freeTerms(f.a, acc, bound);
+        break;
+      case "and":
+      case "or":
+      case "imp":
+      case "iff":
+        freeTerms(f.l, acc, bound);
+        freeTerms(f.r, acc, bound);
+        break;
+      case "all":
+      case "ex": {
+        const nb = new Set(bound);
+        nb.add(f.v);
+        freeTerms(f.a, acc, nb);
+        break;
+      }
+    }
+    return acc;
+  }
+  var conjuncts = (f) => f.t === "and" ? [...conjuncts(f.l), ...conjuncts(f.r)] : [f];
+  var disjuncts = (f) => f.t === "or" ? [...disjuncts(f.l), ...disjuncts(f.r)] : [f];
+  function equalsUpToSubstitution(P, Q, a, b) {
+    if (P.t !== Q.t) return false;
+    const tm = (x, y) => x === y || x === a && y === b;
+    switch (P.t) {
+      case "bot":
+        return true;
+      case "eq":
+        return tm(P.l, Q.l) && tm(P.r, Q.r);
+      case "atom":
+        return P.p === Q.p && P.args.length === Q.args.length && P.args.every((x, i) => tm(x, Q.args[i]));
+      case "not":
+        return equalsUpToSubstitution(P.a, Q.a, a, b);
+      case "and":
+      case "or":
+      case "imp":
+      case "iff":
+        return equalsUpToSubstitution(P.l, Q.l, a, b) && equalsUpToSubstitution(P.r, Q.r, a, b);
+      case "all":
+      case "ex":
+        return P.v === Q.v && equalsUpToSubstitution(P.a, Q.a, a, b);
+    }
+    return false;
+  }
+
+  // src/domain/language/Parser.js
+  var VARIABLE = /^[a-z][0-9]?$/;
+  function parse(source) {
+    const tokens = tokenize(source);
+    let p = 0;
+    const peek = () => tokens[p].kind;
+    const next = () => tokens[p++];
+    const expect = (kind) => {
+      if (tokens[p].kind !== kind) throw new SyntaxError_(`atteso "${kind}"`, tokens[p].position);
+      return tokens[p++];
+    };
+    const biconditional = () => {
+      let left = conditional();
+      while (peek() === "iff") {
+        next();
+        left = Iff(left, conditional());
+      }
+      return left;
+    };
+    const conditional = () => {
+      const left = disjunction();
+      return peek() === "imp" ? (next(), Imp(left, conditional())) : left;
+    };
+    const disjunction = () => {
+      let left = conjunction();
+      while (peek() === "or") {
+        next();
+        left = Or(left, conjunction());
+      }
+      return left;
+    };
+    const conjunction = () => {
+      let left = unary();
+      while (peek() === "and") {
+        next();
+        left = And(left, unary());
+      }
+      return left;
+    };
+    const unary = () => {
+      if (peek() === "not") {
+        next();
+        return Not(unary());
+      }
+      if (peek() === "all" || peek() === "ex") {
+        const quantifier = next().kind;
+        const variable = expect("identifier").value;
+        if (!VARIABLE.test(variable))
+          throw new SyntaxError_(`"${variable}" non e' una variabile: usa u, v, w, x, y, z`);
+        return quantifier === "all" ? All(variable, unary()) : Ex(variable, unary());
+      }
+      return primary();
+    };
+    const primary = () => {
+      if (peek() === "bot") {
+        next();
+        return Bot();
+      }
+      if (peek() === "(") {
+        next();
+        const f = biconditional();
+        expect(")");
+        return f;
+      }
+      if (peek() === "identifier") {
+        const name = next().value;
+        if (peek() === "(") {
+          next();
+          const args = [];
+          if (peek() !== ")") {
+            args.push(expect("identifier").value);
+            while (peek() === ",") {
+              next();
+              args.push(expect("identifier").value);
+            }
+          }
+          expect(")");
+          return Atom(name, args);
+        }
+        if (peek() === "eq") {
+          next();
+          return Eq(name, expect("identifier").value);
+        }
+        if (peek() === "neq") {
+          next();
+          return Not(Eq(name, expect("identifier").value));
+        }
+        return Atom(name, []);
+      }
+      throw new SyntaxError_("formula incompleta", tokens[p].position);
+    };
+    const formula = biconditional();
+    if (peek() !== "end") throw new SyntaxError_("testo in eccesso dopo la formula", tokens[p].position);
+    return formula;
+  }
+  function tryParse(source) {
+    if (!source || !source.trim()) return { ok: false, empty: true, error: "vuoto" };
+    try {
+      return { ok: true, formula: parse(source) };
+    } catch (e) {
+      return { ok: false, empty: false, error: e.message };
+    }
+  }
+
+  // src/domain/language/Printer.js
+  var PRECEDENCE = { iff: 1, imp: 2, or: 3, and: 4, not: 5, all: 5, ex: 5, atom: 9, eq: 9, bot: 9 };
+  function print(f, parent = null) {
+    const precedence = PRECEDENCE[f.t];
+    let text;
+    switch (f.t) {
+      case "bot":
+        return Sym.bot;
+      case "eq":
+        return `${f.l} = ${f.r}`;
+      case "atom":
+        return f.args.length ? `${f.p}(${f.args.join(", ")})` : f.p;
+      case "not":
+        text = Sym.not + print(f.a, f);
+        break;
+      case "all":
+        text = `${Sym.all}${f.v} ${print(f.a, f)}`;
+        break;
+      case "ex":
+        text = `${Sym.ex}${f.v} ${print(f.a, f)}`;
+        break;
+      case "and":
+        text = `${print(f.l, f)} ${Sym.and} ${print(f.r, f)}`;
+        break;
+      case "or":
+        text = `${print(f.l, f)} ${Sym.or} ${print(f.r, f)}`;
+        break;
+      case "imp":
+        text = `${print(f.l, f)} ${Sym.imp} ${print(f.r, f)}`;
+        break;
+      case "iff":
+        text = `${print(f.l, f)} ${Sym.iff} ${print(f.r, f)}`;
+        break;
+    }
+    if (!parent) return text;
+    if (PRECEDENCE[parent.t] > precedence) return `(${text})`;
+    if (PRECEDENCE[parent.t] === precedence) {
+      if (parent.t === "imp") {
+        if (parent.l === f) return `(${text})`;
+      } else if (parent.r === f) return `(${text})`;
+    }
+    return text;
+  }
+
+  // src/domain/truth/TruthTable.js
+  var MAX_ATOMS = 12;
+  function atomsOf(f, acc = /* @__PURE__ */ new Map()) {
+    switch (f.t) {
+      case "not":
+        atomsOf(f.a, acc);
+        break;
+      case "and":
+      case "or":
+      case "imp":
+      case "iff":
+        atomsOf(f.l, acc);
+        atomsOf(f.r, acc);
+        break;
+      case "bot":
+        break;
+      default:
+        acc.set(print(f), f);
+    }
+    return acc;
+  }
+  function valueUnder(f, assignment) {
+    switch (f.t) {
+      case "bot":
+        return false;
+      case "not":
+        return !valueUnder(f.a, assignment);
+      case "and":
+        return valueUnder(f.l, assignment) && valueUnder(f.r, assignment);
+      case "or":
+        return valueUnder(f.l, assignment) || valueUnder(f.r, assignment);
+      case "imp":
+        return !valueUnder(f.l, assignment) || valueUnder(f.r, assignment);
+      case "iff":
+        return valueUnder(f.l, assignment) === valueUnder(f.r, assignment);
+      default:
+        return Boolean(assignment[print(f)]);
+    }
+  }
+  function tableFor(formulas) {
+    const index = /* @__PURE__ */ new Map();
+    formulas.forEach((f) => atomsOf(f, index));
+    const atoms = [...index.keys()].sort();
+    if (atoms.length > MAX_ATOMS) return null;
+    const rowCount = 1 << atoms.length;
+    const assignments = [];
+    const columns = formulas.map(() => []);
+    for (let r = 0; r < rowCount; r++) {
+      const assignment = {};
+      atoms.forEach((a, i) => {
+        assignment[a] = !(r >> atoms.length - 1 - i & 1);
+      });
+      assignments.push(assignment);
+      formulas.forEach((f, j) => columns[j].push(valueUnder(f, assignment)));
+    }
+    return { atoms, assignments, columns, rowCount };
+  }
+  function isTautologicalConsequence(premises, conclusion) {
+    const table = tableFor([...premises, conclusion]);
+    if (!table) return null;
+    const last = table.columns.length - 1;
+    for (let r = 0; r < table.rowCount; r++) {
+      const premisesHold = table.columns.slice(0, last).every((col) => col[r]);
+      if (premisesHold && !table.columns[last][r]) return false;
+    }
+    return true;
+  }
+
+  // src/application/BuildTruthTable.js
+  var BuildTruthTable = class {
+    execute({ sentences }) {
+      const parsed = [], errors = [];
+      sentences.forEach((text, position) => {
+        const result = tryParse(text);
+        if (result.ok) parsed.push({ position, text, formula: result.formula });
+        else if (!result.empty) errors.push({ position, message: result.error });
+      });
+      if (errors.length) return { status: "invalid", errors };
+      if (!parsed.length) return { status: "empty", errors: [] };
+      const table = tableFor(parsed.map((p) => p.formula));
+      if (!table) return { status: "too-large", limit: MAX_ATOMS, errors: [] };
+      return {
+        status: "ok",
+        errors: [],
+        atoms: table.atoms,
+        headers: parsed.map((p) => print(p.formula)),
+        rows: table.assignments.map((assignment, r) => ({
+          reference: table.atoms.map((a) => assignment[a]),
+          values: table.columns.map((col) => col[r])
+        })),
+        analysis: this.analyse(parsed, table)
+      };
+    }
+    analyse(parsed, table) {
+      const perColumn = table.columns.map((col, j) => ({
+        header: print(parsed[j].formula),
+        kind: col.every(Boolean) ? "tautology" : col.every((v) => !v) ? "contradiction" : "contingent"
+      }));
+      if (parsed.length < 2) return { perColumn };
+      const last = table.columns.length - 1;
+      let counterexample = null;
+      for (let r = 0; r < table.rowCount; r++) {
+        const premisesHold = table.columns.slice(0, last).every((col) => col[r]);
+        if (premisesHold && !table.columns[last][r]) {
+          counterexample = { row: r + 1, assignment: { ...table.assignments[r] } };
+          break;
+        }
+      }
+      const satisfiable = [...Array(table.rowCount).keys()].some((r) => table.columns.every((col) => col[r]));
+      return { perColumn, valid: counterexample === null, counterexample, satisfiable };
+    }
+  };
+
+  // src/domain/world/Block.js
+  var Shape = Object.freeze({ TET: "Tet", CUBE: "Cube", DODEC: "Dodec" });
+  var Size = Object.freeze({ SMALL: 1, MEDIUM: 2, LARGE: 3 });
+  var CONSTANTS = Object.freeze(["a", "b", "c", "d", "e", "f"]);
+  var Block = class _Block {
+    constructor({ id, shape: shape2 = Shape.CUBE, size = Size.MEDIUM, x = 0, y = 0, names = [] }) {
+      if (!Object.values(Shape).includes(shape2)) throw new Error(`forma non valida: ${shape2}`);
+      if (!Object.values(Size).includes(size)) throw new Error(`dimensione non valida: ${size}`);
+      if (!Number.isInteger(x) || x < 0 || x > 7) throw new Error("colonna fuori dal tavolo");
+      if (!Number.isInteger(y) || y < 0 || y > 7) throw new Error("riga fuori dal tavolo");
+      this.id = id;
+      this.shape = shape2;
+      this.size = size;
+      this.x = x;
+      this.y = y;
+      this.names = [...names];
+    }
+    with(changes) {
+      return new _Block({ ...this, ...changes, names: changes.names ?? this.names });
+    }
+  };
+
+  // src/domain/world/World.js
+  var UndefinedReference = class extends Error {
+  };
+  var SIGNATURE = Object.freeze({
+    Tet: 1,
+    Cube: 1,
+    Dodec: 1,
+    Small: 1,
+    Medium: 1,
+    Large: 1,
+    SameSize: 2,
+    SameShape: 2,
+    SameRow: 2,
+    SameCol: 2,
+    Larger: 2,
+    Smaller: 2,
+    LeftOf: 2,
+    RightOf: 2,
+    BackOf: 2,
+    FrontOf: 2,
+    Adjoins: 2,
+    Between: 3
+  });
+  var World = class {
+    constructor(blocks = []) {
+      this.blocks = [...blocks];
+      const seen = /* @__PURE__ */ new Set();
+      for (const b of this.blocks) for (const n of b.names) {
+        if (seen.has(n)) throw new Error(`la costante "${n}" e' assegnata a piu' di un blocco`);
+        seen.add(n);
+      }
+    }
+    get isEmpty() {
+      return this.blocks.length === 0;
+    }
+    referentOf(name, assignment) {
+      if (assignment && Object.prototype.hasOwnProperty.call(assignment, name)) return assignment[name];
+      const block = this.blocks.find((b) => b.names.includes(name));
+      if (!block) throw new UndefinedReference(`la costante "${name}" non e' assegnata a nessun blocco`);
+      return block;
+    }
+    holds(predicate, args) {
+      const [p, q, r] = args;
+      switch (predicate) {
+        case "Tet":
+        case "Cube":
+        case "Dodec":
+          return p.shape === predicate;
+        case "Small":
+          return p.size === 1;
+        case "Medium":
+          return p.size === 2;
+        case "Large":
+          return p.size === 3;
+        case "SameSize":
+          return p.size === q.size;
+        case "SameShape":
+          return p.shape === q.shape;
+        case "SameRow":
+          return p.y === q.y;
+        case "SameCol":
+          return p.x === q.x;
+        case "Larger":
+          return p.size > q.size;
+        case "Smaller":
+          return p.size < q.size;
+        case "LeftOf":
+          return p.x < q.x;
+        case "RightOf":
+          return p.x > q.x;
+        case "BackOf":
+          return p.y < q.y;
+        case "FrontOf":
+          return p.y > q.y;
+        case "Adjoins":
+          return p !== q && Math.abs(p.x - q.x) + Math.abs(p.y - q.y) === 1;
+        case "Between":
+          return this.isBetween(p, q, r);
+        default:
+          throw new UndefinedReference(`predicato sconosciuto: ${predicate}`);
+      }
+    }
+    /** a sta fra b e c: collineari su riga, colonna o diagonale, a strettamente interno. */
+    isBetween(a, b, c) {
+      if (a === b || a === c || b === c) return false;
+      const dx = c.x - b.x, dy = c.y - b.y;
+      if (!(dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy))) return false;
+      if ((a.x - b.x) * dy !== (a.y - b.y) * dx) return false;
+      const inside = (p, q, r) => p > Math.min(q, r) && p < Math.max(q, r) || q === r && p === q;
+      return inside(a.x, b.x, c.x) && inside(a.y, b.y, c.y);
+    }
+    /** Verita' di una formula in questo mondo, sotto l'assegnazione g. */
+    satisfies(f, g = {}) {
+      switch (f.t) {
+        case "bot":
+          return false;
+        case "eq":
+          return this.referentOf(f.l, g) === this.referentOf(f.r, g);
+        case "atom": {
+          const arity = SIGNATURE[f.p];
+          if (arity === void 0) throw new UndefinedReference(`predicato sconosciuto: ${f.p}`);
+          if (f.args.length !== arity)
+            throw new UndefinedReference(`${f.p} richiede ${arity} argoment${arity > 1 ? "i" : "o"}`);
+          return this.holds(f.p, f.args.map((a) => this.referentOf(a, g)));
+        }
+        case "not":
+          return !this.satisfies(f.a, g);
+        case "and":
+          return this.satisfies(f.l, g) && this.satisfies(f.r, g);
+        case "or":
+          return this.satisfies(f.l, g) || this.satisfies(f.r, g);
+        case "imp":
+          return !this.satisfies(f.l, g) || this.satisfies(f.r, g);
+        case "iff":
+          return this.satisfies(f.l, g) === this.satisfies(f.r, g);
+        case "all":
+          return this.blocks.every((b) => this.satisfies(f.a, { ...g, [f.v]: b }));
+        case "ex":
+          return this.blocks.some((b) => this.satisfies(f.a, { ...g, [f.v]: b }));
+      }
+    }
+  };
+
+  // src/application/EvaluateInWorld.js
+  var EvaluateInWorld = class {
+    execute({ world, sentences }) {
+      return sentences.map((text, position) => {
+        const parsed = tryParse(text);
+        if (!parsed.ok) {
+          if (parsed.empty) return { position, value: "blank" };
+          return { position, value: "malformed", message: parsed.error };
+        }
+        if (world.isEmpty)
+          return { position, value: "undefined", message: "il mondo e\u2019 vuoto: il dominio non puo\u2019 essere vuoto" };
+        try {
+          return { position, value: world.satisfies(parsed.formula) ? "true" : "false" };
+        } catch (e) {
+          if (e instanceof UndefinedReference) return { position, value: "undefined", message: e.message };
+          throw e;
+        }
+      });
+    }
+  };
+
+  // src/domain/proof/Proof.js
+  var nextId = 1;
+  var newId = () => nextId++;
+  function resetIds(n = 1) {
+    nextId = n;
+  }
+  var Justification = Object.freeze({ PREMISE: "Prem", ASSUMPTION: "Assunz" });
+  var Line = class {
+    constructor({ id = newId(), text = "", rule: rule2 = "", citations = "" } = {}) {
+      this.kind = "line";
+      this.id = id;
+      this.text = text;
+      this.rule = rule2;
+      this.citations = citations;
+    }
+  };
+  var Subproof = class {
+    constructor({ id = newId(), constant = "", items = null } = {}) {
+      this.kind = "subproof";
+      this.id = id;
+      this.constant = constant;
+      this.items = items ?? [new Line({ rule: Justification.ASSUMPTION })];
+    }
+  };
+  var Proof = class {
+    constructor({ items = null, goal = "" } = {}) {
+      this.kind = "proof";
+      this.items = items ?? [new Line({ rule: Justification.PREMISE }), new Line()];
+      this.goal = goal;
+    }
+    /**
+     * Numera le righe e registra, per ciascuna, la catena dei contenitori che la
+     * racchiudono. La catena e' cio' che rende decidibile l'accessibilita'.
+     */
+    index() {
+      const lines = [], subproofs = [];
+      let n = 0;
+      const walk = (container, chain) => {
+        const here = [...chain, container];
+        for (const item of container.items) {
+          if (item.kind === "line") {
+            n++;
+            lines.push({ number: n, line: item, chain: here });
+          } else {
+            const first = n + 1;
+            walk(item, here);
+            subproofs.push({ first, last: n, subproof: item, chain: here });
+          }
+        }
+      };
+      walk(this, []);
+      return { lines, subproofs, lineCount: n };
+    }
+    /** Una riga vede solo cio' che sta in un contenitore ancora aperto sopra di se'. */
+    static isAccessible(targetChain, fromChain) {
+      return targetChain.length <= fromChain.length && targetChain.every((c, i) => c === fromChain[i]);
+    }
+    lastLineOf(container) {
+      for (let i = container.items.length - 1; i >= 0; i--) {
+        const item = container.items[i];
+        if (item.kind === "line") return item;
+        const inner = this.lastLineOf(item);
+        if (inner) return inner;
+      }
+      return null;
+    }
+  };
+
+  // src/domain/proof/rules.js
+  var ok = () => ({ ok: true });
+  var no = (reason) => ({ ok: false, reason });
+  var shape = (ctx, nLines, nSubproofs, message) => ctx.lines.length !== nLines || ctx.subproofs.length !== nSubproofs ? no(message) : null;
+  var RULES = /* @__PURE__ */ new Map();
+  var rule = (name, check) => RULES.set(name, { name, check });
+  rule("Reit", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita esattamente una riga");
+    if (bad) return bad;
+    return equals(ctx.conclusion, ctx.lines[0].formula) ? ok() : no("la formula non coincide con la riga citata");
+  });
+  rule("\u2227 Intro", (ctx) => {
+    if (ctx.subproofs.length) return no("cita solo righe");
+    if (!ctx.lines.length) return no("cita i congiunti");
+    const parts = conjuncts(ctx.conclusion);
+    const covered = parts.every((c) => ctx.lines.some((l) => equals(l.formula, c)));
+    const used = ctx.lines.every((l) => parts.some((c) => equals(l.formula, c)));
+    return covered && used ? ok() : no("i congiunti della conclusione devono corrispondere alle righe citate");
+  });
+  rule("\u2227 Elim", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    return conjuncts(ctx.lines[0].formula).some((c) => equals(c, ctx.conclusion)) ? ok() : no("la formula non e\u2019 un congiunto della riga citata");
+  });
+  rule("\u2228 Intro", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    return disjuncts(ctx.conclusion).some((d) => equals(d, ctx.lines[0].formula)) ? ok() : no("la riga citata deve essere uno dei disgiunti");
+  });
+  rule("\u2228 Elim", (ctx) => {
+    if (ctx.lines.length !== 1) return no("cita una disgiunzione e una sottodimostrazione per ogni disgiunto");
+    if (ctx.lines[0].formula.t !== "or") return no(`la riga ${ctx.lines[0].number} non e\u2019 una disgiunzione`);
+    const parts = disjuncts(ctx.lines[0].formula);
+    if (ctx.subproofs.length !== parts.length)
+      return no(`servono ${parts.length} sottodimostrazioni, una per disgiunto`);
+    const used = /* @__PURE__ */ new Set();
+    for (const d of parts) {
+      const i = ctx.subproofs.findIndex((s, k) => !used.has(k) && s.assumption && equals(s.assumption, d));
+      if (i < 0) return no(`manca la sottodimostrazione che assume ${print(d)}`);
+      used.add(i);
+    }
+    for (const s of ctx.subproofs)
+      if (!s.conclusion || !equals(s.conclusion, ctx.conclusion))
+        return no(`ogni sottodimostrazione deve terminare con ${print(ctx.conclusion)}`);
+    return ok();
+  });
+  rule("\xAC Intro", (ctx) => {
+    const bad = shape(ctx, 0, 1, "cita una sola sottodimostrazione");
+    if (bad) return bad;
+    const s = ctx.subproofs[0];
+    if (!s.assumption) return no("la sottodimostrazione non ha assunzione");
+    if (!s.conclusion || s.conclusion.t !== "bot") return no("la sottodimostrazione deve terminare con \u22A5");
+    return ctx.conclusion.t === "not" && equals(ctx.conclusion.a, s.assumption) ? ok() : no("la conclusione deve essere la negazione dell\u2019assunzione");
+  });
+  rule("\xAC Elim", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    const f = ctx.lines[0].formula;
+    return f.t === "not" && f.a.t === "not" && equals(f.a.a, ctx.conclusion) ? ok() : no(`la riga citata deve avere forma \xAC\xAC${print(ctx.conclusion)}`);
+  });
+  rule("\u2192 Intro", (ctx) => {
+    const bad = shape(ctx, 0, 1, "cita una sola sottodimostrazione");
+    if (bad) return bad;
+    const s = ctx.subproofs[0], c = ctx.conclusion;
+    if (c.t !== "imp") return no("la conclusione deve essere un condizionale");
+    if (!s.assumption || !equals(s.assumption, c.l)) return no(`la sottodimostrazione deve assumere ${print(c.l)}`);
+    return s.conclusion && equals(s.conclusion, c.r) ? ok() : no(`la sottodimostrazione deve terminare con ${print(c.r)}`);
+  });
+  rule("\u2192 Elim", (ctx) => {
+    const bad = shape(ctx, 2, 0, "cita due righe");
+    if (bad) return bad;
+    for (const [i, j] of [[0, 1], [1, 0]]) {
+      const c = ctx.lines[i].formula;
+      if (c.t === "imp" && equals(c.l, ctx.lines[j].formula) && equals(c.r, ctx.conclusion)) return ok();
+    }
+    return no("servono P \u2192 Q e P, con conclusione Q");
+  });
+  rule("\u2194 Intro", (ctx) => {
+    const bad = shape(ctx, 0, 2, "cita due sottodimostrazioni");
+    if (bad) return bad;
+    const c = ctx.conclusion;
+    if (c.t !== "iff") return no("la conclusione deve essere un bicondizionale");
+    const goes = (s, A, B) => s.assumption && s.conclusion && equals(s.assumption, A) && equals(s.conclusion, B);
+    const [s1, s2] = ctx.subproofs;
+    return goes(s1, c.l, c.r) && goes(s2, c.r, c.l) || goes(s2, c.l, c.r) && goes(s1, c.r, c.l) ? ok() : no(`servono le due sottodimostrazioni ${print(c.l)} \u21D2 ${print(c.r)} e viceversa`);
+  });
+  rule("\u2194 Elim", (ctx) => {
+    const bad = shape(ctx, 2, 0, "cita due righe");
+    if (bad) return bad;
+    for (const [i, j] of [[0, 1], [1, 0]]) {
+      const b = ctx.lines[i].formula, other = ctx.lines[j].formula;
+      if (b.t !== "iff") continue;
+      if (equals(b.l, other) && equals(b.r, ctx.conclusion)) return ok();
+      if (equals(b.r, other) && equals(b.l, ctx.conclusion)) return ok();
+    }
+    return no("servono P \u2194 Q e uno dei due lati");
+  });
+  rule("\u22A5 Intro", (ctx) => {
+    const bad = shape(ctx, 2, 0, "cita due righe");
+    if (bad) return bad;
+    if (ctx.conclusion.t !== "bot") return no("la conclusione deve essere \u22A5");
+    const [A, B] = ctx.lines.map((l) => l.formula);
+    const contradicts = (x, y) => x.t === "not" && equals(x.a, y);
+    return contradicts(A, B) || contradicts(B, A) ? ok() : no("le due righe non sono una la negazione dell\u2019altra");
+  });
+  rule("\u22A5 Elim", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    return ctx.lines[0].formula.t === "bot" ? ok() : no("la riga citata deve essere \u22A5");
+  });
+  rule("Taut Con", (ctx) => {
+    if (ctx.subproofs.length) return no("cita solo righe");
+    const verdict = isTautologicalConsequence(ctx.lines.map((l) => l.formula), ctx.conclusion);
+    if (verdict === null) return no("troppe lettere proposizionali per la verifica");
+    return verdict ? ok() : no("non e\u2019 una conseguenza tautologica delle righe citate");
+  });
+  rule("= Intro", (ctx) => {
+    if (ctx.lines.length || ctx.subproofs.length) return no("non si cita nulla");
+    const c = ctx.conclusion;
+    return c.t === "eq" && c.l === c.r ? ok() : no("la conclusione deve avere forma t = t");
+  });
+  rule("= Elim", (ctx) => {
+    const bad = shape(ctx, 2, 0, "cita due righe: un\u2019identita\u2019 e una formula");
+    if (bad) return bad;
+    for (const [i, j] of [[0, 1], [1, 0]]) {
+      const identity = ctx.lines[i].formula, P = ctx.lines[j].formula;
+      if (identity.t !== "eq") continue;
+      if (equalsUpToSubstitution(P, ctx.conclusion, identity.l, identity.r)) return ok();
+      if (equalsUpToSubstitution(P, ctx.conclusion, identity.r, identity.l)) return ok();
+    }
+    return no("la conclusione non si ottiene sostituendo i termini dell\u2019identita\u2019 citata");
+  });
+  rule("\u2200 Elim", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    const u = ctx.lines[0].formula;
+    if (u.t !== "all") return no("la riga citata non e\u2019 una generalizzazione universale");
+    const candidates = /* @__PURE__ */ new Set([...freeTerms(ctx.conclusion), ...freeTerms(u), ...CONSTANTS]);
+    for (const t of candidates) if (equals(substitute(u.a, u.v, t), ctx.conclusion)) return ok();
+    return no(`la formula non e\u2019 un\u2019istanza di ${print(u)}`);
+  });
+  rule("\u2203 Intro", (ctx) => {
+    const bad = shape(ctx, 1, 0, "cita una sola riga");
+    if (bad) return bad;
+    const c = ctx.conclusion;
+    if (c.t !== "ex") return no("la conclusione deve essere una generalizzazione esistenziale");
+    const witness = ctx.lines[0].formula;
+    const candidates = /* @__PURE__ */ new Set([...freeTerms(witness), ...CONSTANTS]);
+    for (const t of candidates) if (equals(substitute(c.a, c.v, t), witness)) return ok();
+    return no(`la riga citata non e\u2019 un\u2019istanza di ${print(c)}`);
+  });
+  rule("\u2200 Intro", (ctx) => {
+    const bad = shape(ctx, 0, 1, "cita una sola sottodimostrazione");
+    if (bad) return bad;
+    const s = ctx.subproofs[0], c = ctx.conclusion;
+    if (!s.constant) return no("la sottodimostrazione deve dichiarare una costante nuova nella casella squadrata");
+    if (c.t !== "all") return no("la conclusione deve essere universale");
+    if (freeTerms(c).has(s.constant)) return no(`la costante ${s.constant} non puo\u2019 comparire nella conclusione`);
+    if (!s.conclusion) return no("la sottodimostrazione e\u2019 vuota");
+    const expected = substitute(c.a, c.v, s.constant);
+    return equals(expected, s.conclusion) ? ok() : no(`la sottodimostrazione dovrebbe terminare con ${print(expected)}`);
+  });
+  rule("\u2203 Elim", (ctx) => {
+    if (ctx.lines.length !== 1 || ctx.subproofs.length !== 1)
+      return no("cita una riga esistenziale e una sottodimostrazione");
+    const x = ctx.lines[0].formula, s = ctx.subproofs[0];
+    if (x.t !== "ex") return no(`la riga ${ctx.lines[0].number} non e\u2019 una generalizzazione esistenziale`);
+    if (!s.constant) return no("la sottodimostrazione deve dichiarare una costante nuova");
+    if (freeTerms(ctx.conclusion).has(s.constant)) return no(`la costante ${s.constant} non puo\u2019 comparire nella conclusione`);
+    if (freeTerms(x).has(s.constant)) return no(`la costante ${s.constant} compare gia\u2019 nella riga citata: non e\u2019 nuova`);
+    const expected = substitute(x.a, x.v, s.constant);
+    if (!s.assumption || !equals(s.assumption, expected)) return no(`la sottodimostrazione deve assumere ${print(expected)}`);
+    return s.conclusion && equals(s.conclusion, ctx.conclusion) ? ok() : no(`la sottodimostrazione deve terminare con ${print(ctx.conclusion)}`);
+  });
+  var RULE_NAMES = ["", "Prem", "Assunz", ...RULES.keys()];
+
+  // src/domain/proof/ProofChecker.js
+  var Status = Object.freeze({
+    OK: "ok",
+    INVALID: "invalid",
+    MALFORMED: "malformed",
+    UNJUSTIFIED: "unjustified",
+    EMPTY: "empty"
+  });
+  var RANGE = /^(\d+)\s*[-–]\s*(\d+)$/;
+  var ProofChecker = class {
+    check(proof) {
+      const index = proof.index();
+      const formulas = /* @__PURE__ */ new Map();
+      for (const { line } of index.lines) {
+        const parsed = tryParse(line.text);
+        formulas.set(line.id, parsed.ok ? parsed.formula : null);
+      }
+      const results = /* @__PURE__ */ new Map();
+      for (const entry of index.lines) {
+        results.set(entry.line.id, this.checkLine(entry, index, formulas, proof));
+      }
+      return { results, index, formulas, verdict: this.verdictFor(proof, index, formulas, results) };
+    }
+    checkLine(entry, index, formulas, proof) {
+      const { line } = entry;
+      if (!line.text.trim()) return { status: Status.EMPTY };
+      const formula = formulas.get(line.id);
+      if (!formula) return { status: Status.MALFORMED, message: `formula non valida: ${tryParse(line.text).error}` };
+      if (line.rule === Justification.PREMISE || line.rule === Justification.ASSUMPTION)
+        return { status: Status.OK };
+      if (!line.rule) return { status: Status.UNJUSTIFIED };
+      const rule2 = RULES.get(line.rule);
+      if (!rule2) return { status: Status.INVALID, message: `regola non riconosciuta: ${line.rule}` };
+      const resolved = this.resolveCitations(line.citations, entry, index, formulas, proof);
+      if (resolved.error) return { status: Status.INVALID, message: resolved.error };
+      const outcome = rule2.check({ conclusion: formula, lines: resolved.lines, subproofs: resolved.subproofs });
+      return outcome.ok ? { status: Status.OK } : { status: Status.INVALID, message: outcome.reason };
+    }
+    resolveCitations(citations, entry, index, formulas, proof) {
+      const tokens = (citations || "").split(",").map((s) => s.trim()).filter(Boolean);
+      const lines = [], subproofs = [];
+      for (const token of tokens) {
+        const range = token.match(RANGE);
+        if (range) {
+          const [first, last] = [Number(range[1]), Number(range[2])];
+          const found = index.subproofs.find((s) => s.first === first && s.last === last);
+          if (!found) return { error: `non esiste una sottodimostrazione ${token}` };
+          if (!Proof.isAccessible(found.chain, entry.chain))
+            return { error: `la sottodimostrazione ${token} non e\u2019 accessibile da qui` };
+          if (entry.chain.includes(found.subproof))
+            return { error: "non puoi citare la sottodimostrazione in cui ti trovi" };
+          if (found.last >= entry.number) return { error: `la sottodimostrazione ${token} non e\u2019 ancora chiusa` };
+          const innerLines = found.subproof.items.filter((i) => i.kind === "line");
+          subproofs.push({
+            assumption: innerLines.length ? formulas.get(innerLines[0].id) : null,
+            conclusion: this.lastFormulaOf(found.subproof, formulas),
+            constant: (found.subproof.constant || "").trim(),
+            label: token
+          });
+          continue;
+        }
+        if (!/^\d+$/.test(token)) return { error: `citazione non riconosciuta: "${token}"` };
+        const number = Number(token);
+        const target = index.lines.find((l) => l.number === number);
+        if (!target) return { error: `non esiste la riga ${number}` };
+        if (number >= entry.number) return { error: `la riga ${number} non precede questa` };
+        if (!Proof.isAccessible(target.chain, entry.chain))
+          return { error: `la riga ${number} e\u2019 dentro una sottodimostrazione chiusa: non e\u2019 accessibile` };
+        const formula = formulas.get(target.line.id);
+        if (!formula) return { error: `la riga ${number} non contiene una formula valida` };
+        lines.push({ formula, number });
+      }
+      return { lines, subproofs };
+    }
+    lastFormulaOf(container, formulas) {
+      for (let i = container.items.length - 1; i >= 0; i--) {
+        const item = container.items[i];
+        if (item.kind === "line") return formulas.get(item.id);
+        const inner = this.lastFormulaOf(item, formulas);
+        if (inner) return inner;
+      }
+      return null;
+    }
+    verdictFor(proof, index, formulas, results) {
+      if (!index.lines.length) return { kind: "empty", message: "" };
+      const everyLineOk = index.lines.every((l) => results.get(l.line.id)?.status === Status.OK);
+      if (!everyLineOk) return { kind: "incomplete", message: "ci sono righe non giustificate" };
+      const goal = tryParse(proof.goal);
+      if (!goal.ok) return { kind: "sound", message: "tutte le righe sono corrette" };
+      const last = proof.items[proof.items.length - 1];
+      const lastFormula = last && last.kind === "line" ? formulas.get(last.id) : null;
+      return lastFormula && equals(lastFormula, goal.formula) ? { kind: "complete", message: "prova completa" } : { kind: "off-goal", message: "righe corrette, ma l\u2019ultima non e\u2019 l\u2019obiettivo" };
+    }
+  };
+
+  // src/application/CheckProof.js
+  var CheckProof = class {
+    constructor(checker = new ProofChecker()) {
+      this.checker = checker;
+    }
+    execute({ proof }) {
+      const { results, index, verdict } = this.checker.check(proof);
+      return {
+        verdict,
+        lines: index.lines.map(({ number, line }) => ({
+          number,
+          id: line.id,
+          ...results.get(line.id) ?? { status: "empty" }
+        }))
+      };
+    }
+  };
+
+  // src/application/ports.js
+  var missing = (name) => {
+    throw new Error(`porta non implementata: ${name}`);
+  };
+  var WorkspaceRepository = class {
+    async load(key) {
+      missing("WorkspaceRepository.load");
+    }
+    async save(key, value) {
+      missing("WorkspaceRepository.save");
+    }
+    async remove(key) {
+      missing("WorkspaceRepository.remove");
+    }
+  };
+
+  // src/infrastructure/persistence/LocalStorageWorkspaceRepository.js
+  var LocalStorageWorkspaceRepository = class extends WorkspaceRepository {
+    constructor(prefix = "verum:") {
+      super();
+      this.prefix = prefix;
+    }
+    async load(key) {
+      try {
+        const raw = localStorage.getItem(this.prefix + key);
+        return raw ? JSON.parse(raw) : null;
+      } catch {
+        return null;
+      }
+    }
+    async save(key, value) {
+      try {
+        localStorage.setItem(this.prefix + key, JSON.stringify(value));
+      } catch {
+      }
+    }
+    async remove(key) {
+      try {
+        localStorage.removeItem(this.prefix + key);
+      } catch {
+      }
+    }
+  };
+
+  // src/infrastructure/web/dom.js
+  var $ = (selector, root = document) => root.querySelector(selector);
+  var $ = (selector, root = document) => [...root.querySelectorAll(selector)];
+  function el(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text != null) node.textContent = text;
+    return node;
+  }
+  var clear = (node) => {
+    node.innerHTML = "";
+    return node;
+  };
+
+  // src/infrastructure/web/Router.js
+  var Router = class {
+    constructor(screens = ["home", "tt", "wd", "pf"]) {
+      this.screens = screens;
+    }
+    start() {
+      $("[data-go]").forEach((b) => b.addEventListener("click", () => this.go(b.dataset.go)));
+      $("[data-home]").forEach((b) => b.addEventListener("click", () => this.go("home")));
+      const hash = (location.hash || "").slice(1);
+      if (this.screens.includes(hash)) this.go(hash);
+    }
+    go(id) {
+      $(".screen").forEach((s) => s.classList.toggle("on", s.id === "s-" + id));
+      window.scrollTo(0, 0);
+      if (location.hash !== "#" + id) history.replaceState(null, "", "#" + id);
+    }
+  };
+
+  // src/infrastructure/web/SymbolPalette.js
+  var SYMBOLS = ["\xAC", "\u2227", "\u2228", "\u2192", "\u2194", "\u22A5", "\u2200", "\u2203", "=", "\u2260"];
+  var SymbolPalette = class {
+    constructor() {
+      this.lastField = null;
+    }
+    start() {
+      document.addEventListener("focusin", (e) => {
+        if (e.target.matches(".finput, .pf")) this.lastField = e.target;
+      });
+      $(".palette").forEach((palette) => SYMBOLS.forEach((symbol) => {
+        const button = el("button", null, symbol);
+        button.type = "button";
+        button.title = symbol;
+        button.addEventListener("mousedown", (e) => e.preventDefault());
+        button.addEventListener("click", () => this.insert(symbol));
+        palette.appendChild(button);
+      }));
+    }
+    insert(symbol) {
+      const field = this.lastField?.closest(".screen.on") ? this.lastField : null;
+      if (!field) return;
+      const start = field.selectionStart, end = field.selectionEnd;
+      field.value = field.value.slice(0, start) + symbol + field.value.slice(end);
+      field.focus();
+      field.selectionStart = field.selectionEnd = start + symbol.length;
+      field.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  };
+
+  // src/infrastructure/web/TruthTableView.js
+  var KIND_LABEL = { tautology: ["t", "tautologia"], contradiction: ["f", "contraddizione"], contingent: ["n", "contingente"] };
+  var TruthTableView = class {
+    constructor({ buildTruthTable: buildTruthTable2, repository: repository2 }) {
+      this.buildTruthTable = buildTruthTable2;
+      this.repository = repository2;
+      this.sentences = ["P \u2192 Q", "P", "Q"];
+    }
+    async start() {
+      const saved = await this.repository.load("truth-table");
+      if (Array.isArray(saved?.sentences) && saved.sentences.length) this.sentences = saved.sentences;
+      $("#tt-add").addEventListener("click", () => {
+        this.sentences.push("");
+        this.renderInputs();
+        this.focusLast();
+      });
+      $("#tt-clear").addEventListener("click", () => {
+        this.sentences = [""];
+        this.renderInputs();
+        clear($("#tt-out"));
+        this.persist();
+      });
+      $("#tt-build").addEventListener("click", () => this.build());
+      $("#tt-example").addEventListener("click", () => {
+        this.sentences = ["P \u2192 Q", "Q \u2192 R", "P \u2192 R"];
+        this.renderInputs();
+        this.build();
+      });
+      this.renderInputs();
+    }
+    persist() {
+      this.repository.save("truth-table", { sentences: this.sentences });
+    }
+    focusLast() {
+      const all = $("#tt-rows .finput");
+      all[all.length - 1]?.focus();
+    }
+    renderInputs() {
+      const host = clear($("#tt-rows"));
+      this.sentences.forEach((value, i) => {
+        const row = el("div", "frow");
+        row.appendChild(el("div", "n", i === this.sentences.length - 1 ? "\u2234" : `${i + 1}.`));
+        const input = el("input", "finput formula");
+        input.value = value;
+        input.placeholder = "es. P \u2227 \xACQ";
+        input.addEventListener("input", () => {
+          this.sentences[i] = input.value;
+          input.classList.remove("bad");
+        });
+        input.addEventListener("change", () => this.persist());
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            this.build();
+          }
+        });
+        const remove = el("button", "xbtn", "\xD7");
+        remove.title = "Elimina";
+        remove.addEventListener("click", () => {
+          this.sentences.splice(i, 1);
+          if (!this.sentences.length) this.sentences = [""];
+          this.renderInputs();
+          this.persist();
+        });
+        row.append(input, remove);
+        host.appendChild(row);
+      });
+    }
+    build() {
+      this.persist();
+      const out = clear($("#tt-out"));
+      const result = this.buildTruthTable.execute({ sentences: this.sentences });
+      const inputs = $("#tt-rows .finput");
+      inputs.forEach((i) => i.classList.remove("bad"));
+      if (result.status === "invalid") {
+        result.errors.forEach((e) => inputs[e.position]?.classList.add("bad"));
+        out.appendChild(el("p", "err", `Riga ${result.errors[0].position + 1}: ${result.errors[0].message}`));
+        return;
+      }
+      if (result.status === "empty") {
+        out.appendChild(el("p", "hint", "Inserisci almeno un enunciato."));
+        return;
+      }
+      if (result.status === "too-large") {
+        out.appendChild(el("p", "err", `Troppe lettere proposizionali: il limite e' ${result.limit}.`));
+        return;
+      }
+      out.appendChild(this.renderTable(result));
+      out.appendChild(this.renderAnalysis(result));
+    }
+    renderTable({ atoms, headers, rows }) {
+      const wrap = el("div", "ttwrap");
+      const table = el("table", "tt");
+      const head = el("thead"), headRow = el("tr");
+      atoms.forEach((a) => headRow.appendChild(el("th", null, a)));
+      headers.forEach((h, j) => headRow.appendChild(el("th", j === 0 ? "sep" : null, h)));
+      head.appendChild(headRow);
+      table.appendChild(head);
+      const body = el("tbody");
+      rows.forEach((row) => {
+        const tr = el("tr");
+        row.reference.forEach((v) => tr.appendChild(el("td", `ref ${v ? "T" : "F"}`, v ? "T" : "F")));
+        row.values.forEach((v, j) => {
+          const cell = el("td", `main ${v ? "T" : "F"}`, v ? "T" : "F");
+          if (j === 0) cell.classList.add("sep");
+          tr.appendChild(cell);
+        });
+        body.appendChild(tr);
+      });
+      table.appendChild(body);
+      wrap.appendChild(table);
+      return wrap;
+    }
+    renderAnalysis({ analysis }) {
+      const summary = el("div", "sum");
+      summary.style.marginTop = "16px";
+      const add = (label, text, chip) => {
+        const row = el("div", "row");
+        row.appendChild(el("span", "k", label));
+        const value = el("span");
+        value.style.flex = "1";
+        if (chip) {
+          value.appendChild(el("span", `chip ${chip[0]}`, chip[1]));
+          value.append(" ");
+        }
+        value.append(text || "");
+        row.appendChild(value);
+        summary.appendChild(row);
+      };
+      analysis.perColumn.forEach((c, j) => add(`Colonna ${j + 1}`, c.header, KIND_LABEL[c.kind]));
+      if (analysis.valid !== void 0) {
+        add(
+          "Argomento",
+          analysis.valid ? "ogni riga che rende vere tutte le premesse rende vera anche la conclusione" : `controesempio alla riga ${analysis.counterexample.row}: ` + Object.entries(analysis.counterexample.assignment).map(([k, v]) => `${k}=${v ? "T" : "F"}`).join(", "),
+          analysis.valid ? ["t", "valido (conseguenza tautologica)"] : ["f", "non valido"]
+        );
+        add(
+          "Insieme",
+          analysis.satisfiable ? "esiste almeno una riga che le rende tutte vere" : "nessuna riga le rende tutte vere",
+          analysis.satisfiable ? ["t", "congiuntamente soddisfacibile"] : ["w", "insoddisfacibile"]
+        );
+      }
+      return summary;
+    }
+  };
+
+  // src/infrastructure/web/BlockShapes.js
+  var PIXELS = { 1: 26, 2: 36, 3: 48 };
+  var FILL = "#FBFBF8";
+  var SIDE = "#E1E3DA";
+  var TOP = "#F1F2EB";
+  var STROKE = "#16181A";
+  function blockSvg({ shape: shape2, size }) {
+    const px = PIXELS[size];
+    let inner;
+    if (shape2 === "Cube") {
+      const d = px * 0.26, s = px * 0.68;
+      inner = `<g class="body" stroke="${STROKE}" stroke-width="1.2" stroke-linejoin="round">
+      <polygon points="0,${d} ${d},0 ${s + d},0 ${s},${d}" fill="${TOP}"/>
+      <polygon points="${s},${d} ${s + d},0 ${s + d},${s} ${s},${s + d}" fill="${SIDE}"/>
+      <rect x="0" y="${d}" width="${s}" height="${s}" fill="${FILL}"/></g>`;
+    } else if (shape2 === "Tet") {
+      const s = px * 0.9, d = px * 0.22;
+      inner = `<g class="body" stroke="${STROKE}" stroke-width="1.2" stroke-linejoin="round">
+      <polygon points="${s / 2},0 0,${s} ${s},${s}" fill="${FILL}"/>
+      <polygon points="${s / 2},0 ${s},${s} ${s * 0.78},${s - d}" fill="${SIDE}"/></g>`;
+    } else {
+      const r = px * 0.46, cx = px * 0.5, cy = px * 0.5;
+      const points = [...Array(6).keys()].map((i) => {
+        const a = Math.PI / 6 + i * Math.PI / 3;
+        return `${(cx + r * Math.cos(a)).toFixed(1)},${(cy + r * Math.sin(a)).toFixed(1)}`;
+      }).join(" ");
+      inner = `<g class="body" stroke="${STROKE}" stroke-width="1.2" stroke-linejoin="round">
+      <polygon points="${points}" fill="${FILL}"/>
+      <polygon points="${cx},${cy - r} ${cx + r * 0.87},${cy - r * 0.5} ${cx},${cy} ${cx - r * 0.87},${cy - r * 0.5}" fill="${TOP}"/>
+      <polygon points="${cx + r * 0.87},${cy - r * 0.5} ${cx + r * 0.87},${cy + r * 0.5} ${cx},${cy}" fill="${SIDE}"/></g>`;
+    }
+    return `<svg width="${px}" height="${px}" viewBox="0 0 ${px} ${px}">${inner}</svg>`;
+  }
+
+  // src/infrastructure/web/WorldView.js
+  var SHAPE_LABELS = [[Shape.TET, "Tetraedro"], [Shape.CUBE, "Cubo"], [Shape.DODEC, "Dodecaedro"]];
+  var SIZE_LABELS = [[Size.SMALL, "Piccolo"], [Size.MEDIUM, "Medio"], [Size.LARGE, "Grande"]];
+  var VALUE_CHIP = {
+    true: ["t", "vero"],
+    false: ["f", "falso"],
+    undefined: ["w", "indefinito"],
+    malformed: ["f", "non valida"]
+  };
+  var WorldView = class {
+    constructor({ evaluateInWorld: evaluateInWorld2, repository: repository2 }) {
+      this.evaluateInWorld = evaluateInWorld2;
+      this.repository = repository2;
+      this.blocks = [];
+      this.selected = null;
+      this.nextId = 1;
+      this.sentences = ["\u2200x (Cube(x) \u2192 Large(x))", "\u2203y Tet(y)", "Larger(a, b)"];
+    }
+    async start() {
+      const saved = await this.repository.load("world");
+      if (saved?.blocks) {
+        this.blocks = saved.blocks.map((b) => ({ ...b }));
+        this.nextId = Math.max(0, ...this.blocks.map((b) => b.id)) + 1;
+        if (saved.sentences?.length) this.sentences = saved.sentences;
+      } else {
+        this.loadExampleWorld();
+      }
+      $("#wd-add").addEventListener("click", () => {
+        this.sentences.push("");
+        this.renderSentences();
+      });
+      $("#wd-clearsent").addEventListener("click", () => {
+        this.sentences = [""];
+        this.renderSentences();
+        this.persist();
+      });
+      $("#wd-clearworld").addEventListener("click", () => {
+        this.blocks = [];
+        this.selected = null;
+        this.renderBoard();
+        this.renderInspector();
+        this.persist();
+      });
+      $("#wd-eval").addEventListener("click", () => this.evaluate());
+      $("#wd-example").addEventListener("click", () => {
+        this.loadExampleWorld();
+        this.sentences = [
+          "\u2200x (Cube(x) \u2192 \xACTet(x))",
+          "\u2203x (Tet(x) \u2227 Small(x))",
+          "Larger(a, b)",
+          "\u2200x \u2203y (Larger(y, x) \u2228 x = y)",
+          "Between(e, d, c)"
+        ];
+        this.renderBoard();
+        this.renderInspector();
+        this.renderSentences();
+        this.evaluate();
+      });
+      this.renderBoard();
+      this.renderInspector();
+      this.renderSentences();
+    }
+    persist() {
+      this.repository.save("world", { blocks: this.blocks, sentences: this.sentences });
+    }
+    loadExampleWorld() {
+      this.blocks = [
+        { id: 1, shape: Shape.CUBE, size: Size.LARGE, x: 1, y: 1, names: ["a"] },
+        { id: 2, shape: Shape.CUBE, size: Size.MEDIUM, x: 4, y: 1, names: ["b"] },
+        { id: 3, shape: Shape.TET, size: Size.SMALL, x: 6, y: 3, names: ["c"] },
+        { id: 4, shape: Shape.DODEC, size: Size.LARGE, x: 2, y: 5, names: ["d"] },
+        { id: 5, shape: Shape.TET, size: Size.MEDIUM, x: 4, y: 5, names: ["e"] },
+        { id: 6, shape: Shape.CUBE, size: Size.SMALL, x: 5, y: 6, names: ["f"] }
+      ];
+      this.nextId = 7;
+      this.selected = null;
+    }
+    /** Traduce lo stato di editing nell'aggregato di dominio. */
+    toWorld() {
+      return new World(this.blocks.map((b) => new Block(b)));
+    }
+    renderBoard() {
+      const board = clear($("#wd-board"));
+      for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) {
+        const cell = el("div", "cell");
+        const block = this.blocks.find((b) => b.x === x && b.y === y);
+        if (block) {
+          const node = el("div", "blk" + (this.selected === block.id ? " sel" : ""));
+          node.innerHTML = blockSvg(block);
+          node.draggable = true;
+          node.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.selected = block.id;
+            this.renderBoard();
+            this.renderInspector();
+          });
+          node.addEventListener("dragstart", (e) => e.dataTransfer.setData("text/plain", String(block.id)));
+          cell.appendChild(node);
+          if (block.names.length) cell.appendChild(el("span", "lbl", block.names.join(" ")));
+        } else {
+          cell.addEventListener("click", () => {
+            const created = { id: this.nextId++, shape: Shape.CUBE, size: Size.MEDIUM, x, y, names: [] };
+            this.blocks.push(created);
+            this.selected = created.id;
+            this.renderBoard();
+            this.renderInspector();
+            this.persist();
+          });
+        }
+        cell.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          cell.classList.add("drop");
+        });
+        cell.addEventListener("dragleave", () => cell.classList.remove("drop"));
+        cell.addEventListener("drop", (e) => {
+          e.preventDefault();
+          cell.classList.remove("drop");
+          const id = Number(e.dataTransfer.getData("text/plain"));
+          const moved = this.blocks.find((b) => b.id === id);
+          if (!moved || this.blocks.some((b) => b.x === x && b.y === y && b.id !== id)) return;
+          moved.x = x;
+          moved.y = y;
+          this.selected = id;
+          this.renderBoard();
+          this.renderInspector();
+          this.persist();
+        });
+        board.appendChild(cell);
+      }
+    }
+    renderInspector() {
+      const host = clear($("#wd-insp"));
+      const block = this.blocks.find((b) => b.id === this.selected);
+      if (!block) {
+        host.appendChild(el("p", "hint", "Nessun blocco selezionato. Clic su una casella vuota per aggiungerne uno."));
+        return;
+      }
+      const group = (label, options, isActive, pick) => {
+        const wrap = el("div");
+        wrap.appendChild(el("label", null, label));
+        const row = el("div", "grp");
+        options.forEach(([value, text]) => {
+          const button = el("button", "seg" + (isActive(value) ? " on" : ""), text);
+          button.addEventListener("click", () => {
+            pick(value);
+            this.renderBoard();
+            this.renderInspector();
+            this.persist();
+          });
+          row.appendChild(button);
+        });
+        wrap.appendChild(row);
+        return wrap;
+      };
+      host.appendChild(group("Forma", SHAPE_LABELS, (v) => block.shape === v, (v) => block.shape = v));
+      host.appendChild(group("Dimensione", SIZE_LABELS, (v) => block.size === v, (v) => block.size = v));
+      const names = el("div");
+      names.appendChild(el("label", null, "Nomi (una costante puo\u2019 stare su un solo blocco)"));
+      const tags = el("div", "nametags");
+      CONSTANTS.forEach((name) => {
+        const active = block.names.includes(name);
+        const tag = el("button", "nametag" + (active ? " on" : ""), name);
+        tag.addEventListener("click", () => {
+          if (active) block.names = block.names.filter((n) => n !== name);
+          else {
+            this.blocks.forEach((b) => {
+              b.names = b.names.filter((n) => n !== name);
+            });
+            block.names = [...block.names, name].sort();
+          }
+          this.renderBoard();
+          this.renderInspector();
+          this.persist();
+        });
+        tags.appendChild(tag);
+      });
+      names.appendChild(tags);
+      host.appendChild(names);
+      const remove = el("button", "btn sm", "Elimina blocco");
+      remove.style.marginTop = "8px";
+      remove.addEventListener("click", () => {
+        this.blocks = this.blocks.filter((b) => b.id !== block.id);
+        this.selected = null;
+        this.renderBoard();
+        this.renderInspector();
+        this.persist();
+      });
+      host.appendChild(remove);
+    }
+    renderSentences() {
+      const host = clear($("#wd-rows"));
+      this.sentences.forEach((value, i) => {
+        const row = el("div", "frow");
+        row.appendChild(el("div", "n", `${i + 1}.`));
+        const input = el("input", "finput formula");
+        input.value = value;
+        input.placeholder = "es. \u2200x (Cube(x) \u2192 Small(x))";
+        input.addEventListener("input", () => {
+          this.sentences[i] = input.value;
+          input.classList.remove("bad");
+        });
+        input.addEventListener("change", () => this.persist());
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            this.evaluate();
+          }
+        });
+        const verdict = el("span");
+        verdict.id = `wd-v${i}`;
+        verdict.style.minWidth = "72px";
+        verdict.style.flex = "none";
+        const remove = el("button", "xbtn", "\xD7");
+        remove.addEventListener("click", () => {
+          this.sentences.splice(i, 1);
+          if (!this.sentences.length) this.sentences = [""];
+          this.renderSentences();
+          this.persist();
+        });
+        row.append(input, verdict, remove);
+        host.appendChild(row);
+        const error = el("p", "err");
+        error.id = `wd-e${i}`;
+        error.style.display = "none";
+        host.appendChild(error);
+      });
+    }
+    evaluate() {
+      this.persist();
+      let world;
+      try {
+        world = this.toWorld();
+      } catch (e) {
+        alert(e.message);
+        return;
+      }
+      const results = this.evaluateInWorld.execute({ world, sentences: this.sentences });
+      const inputs = $("#wd-rows .finput");
+      results.forEach(({ position, value, message }) => {
+        const verdict = clear($(`#wd-v${position}`));
+        const error = $(`#wd-e${position}`);
+        error.style.display = "none";
+        inputs[position]?.classList.remove("bad");
+        if (value === "blank") return;
+        const chip = VALUE_CHIP[value];
+        verdict.appendChild(el("span", `chip ${chip[0]}`, chip[1]));
+        if (value === "malformed") inputs[position]?.classList.add("bad");
+        if (message) {
+          error.textContent = message;
+          error.style.display = "block";
+        }
+      });
+    }
+  };
+
+  // src/infrastructure/web/ProofView.js
+  var VERDICT_CHIP = {
+    complete: "t",
+    sound: "n",
+    incomplete: "w",
+    "off-goal": "w",
+    empty: null
+  };
+  var ProofView = class {
+    constructor({ checkProof: checkProof2, repository: repository2 }) {
+      this.checkProof = checkProof2;
+      this.repository = repository2;
+      this.proof = null;
+      this.focusKey = null;
+    }
+    async start() {
+      const saved = await this.repository.load("proof");
+      this.proof = saved ? this.deserialize(saved) : this.blankProof();
+      $("#pf-goal").value = this.proof.goal;
+      $("#pf-goal").addEventListener("input", (e) => {
+        this.proof.goal = e.target.value;
+      });
+      $("#pf-goal").addEventListener("blur", () => {
+        this.render();
+        this.persist();
+      });
+      $("#pf-check").addEventListener("click", () => this.render());
+      $("#pf-reset").addEventListener("click", () => {
+        this.proof = this.blankProof();
+        $("#pf-goal").value = "";
+        this.render();
+        this.persist();
+      });
+      $("#pf-addprem").addEventListener("click", () => {
+        let last = -1;
+        this.proof.items.forEach((item, i) => {
+          if (item.kind === "line" && item.rule === Justification.PREMISE) last = i;
+        });
+        this.proof.items.splice(last + 1, 0, new Line({ rule: Justification.PREMISE }));
+        this.render();
+        this.persist();
+      });
+      $("#pf-addline").addEventListener("click", () => {
+        this.proof.items.push(new Line());
+        this.render();
+        this.persist();
+      });
+      $("#pf-addsub").addEventListener("click", () => {
+        this.proof.items.push(new Subproof());
+        this.render();
+        this.persist();
+      });
+      $("#pf-example").addEventListener("click", () => {
+        this.proof = this.exampleProof();
+        $("#pf-goal").value = this.proof.goal;
+        this.render();
+        this.persist();
+      });
+      this.render();
+    }
+    blankProof() {
+      resetIds(1);
+      return new Proof({ goal: "P \u2192 (Q \u2192 P)" });
+    }
+    exampleProof() {
+      resetIds(1);
+      return new Proof({
+        goal: "Q \u2192 P",
+        items: [
+          new Line({ text: "P", rule: Justification.PREMISE }),
+          new Subproof({ items: [
+            new Line({ text: "Q", rule: Justification.ASSUMPTION }),
+            new Line({ text: "P", rule: "Reit", citations: "1" })
+          ] }),
+          new Line({ text: "Q \u2192 P", rule: "\u2192 Intro", citations: "2-3" })
+        ]
+      });
+    }
+    /* ---- serializzazione: dati semplici, non oggetti di dominio ---- */
+    serialize(container = this.proof) {
+      return {
+        goal: this.proof.goal,
+        items: container.items.map((item) => item.kind === "line" ? { kind: "line", text: item.text, rule: item.rule, citations: item.citations } : { kind: "subproof", constant: item.constant, items: this.serialize(item).items })
+      };
+    }
+    deserialize(data) {
+      resetIds(1);
+      const build = (items) => items.map((item) => item.kind === "line" ? new Line({ text: item.text, rule: item.rule, citations: item.citations }) : new Subproof({ constant: item.constant, items: build(item.items) }));
+      return new Proof({ goal: data.goal ?? "", items: build(data.items ?? []) });
+    }
+    persist() {
+      this.repository.save("proof", this.serialize());
+    }
+    /* ---- rendering ---- */
+    render() {
+      const host = clear($("#pf-proof"));
+      const outcome = this.checkProof.execute({ proof: this.proof });
+      const byId = new Map(outcome.lines.map((l) => [l.id, l]));
+      let number = 0;
+      const renderLine = (line, container, isAssumption, subproof) => {
+        number++;
+        const wrapper = el("div");
+        const row = el("div", "pline");
+        row.appendChild(el("div", "pnum", String(number)));
+        const body = el("div", "pbody");
+        if (isAssumption && subproof) {
+          const constant = el("input", "pconst formula");
+          constant.value = subproof.constant || "";
+          constant.placeholder = "c";
+          constant.maxLength = 3;
+          constant.title = "Costante nuova (per \u2200 Intro / \u2203 Elim)";
+          constant.addEventListener("input", () => {
+            subproof.constant = constant.value.trim();
+          });
+          constant.addEventListener("blur", () => {
+            this.render();
+            this.persist();
+          });
+          body.appendChild(constant);
+        }
+        const text = el("input", "pf formula");
+        text.value = line.text;
+        text.placeholder = "formula";
+        text.dataset.fk = "f" + line.id;
+        text.addEventListener("input", () => {
+          line.text = text.value;
+        });
+        text.addEventListener("blur", () => {
+          this.render();
+          this.persist();
+        });
+        text.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            line.text = text.value;
+            this.insertAfter(container, line);
+          }
+        });
+        body.appendChild(text);
+        const rule2 = el("select", "prule");
+        RULE_NAMES.forEach((name) => {
+          const option = el("option", null, name || "\u2014 regola \u2014");
+          option.value = name;
+          rule2.appendChild(option);
+        });
+        rule2.value = line.rule || "";
+        rule2.addEventListener("change", () => {
+          line.rule = rule2.value;
+          this.render();
+          this.persist();
+        });
+        body.appendChild(rule2);
+        const citations = el("input", "prefs");
+        citations.value = line.citations || "";
+        citations.placeholder = "rif.";
+        citations.addEventListener("input", () => {
+          line.citations = citations.value;
+        });
+        citations.addEventListener("blur", () => {
+          this.render();
+          this.persist();
+        });
+        body.appendChild(citations);
+        const result = byId.get(line.id) ?? { status: "empty" };
+        const status = el("span", "pstat");
+        if (result.status === "ok") {
+          status.classList.add("ok");
+          status.textContent = "\u25CF";
+          status.title = "corretta";
+        } else if (result.status === "invalid" || result.status === "malformed") {
+          status.classList.add("no");
+          status.textContent = "\u25CF";
+          status.title = result.message || "";
+        } else {
+          status.textContent = "\u25CB";
+          status.style.color = "var(--rule)";
+        }
+        body.appendChild(status);
+        const remove = el("button", "xbtn", "\xD7");
+        remove.addEventListener("click", () => {
+          container.items.splice(container.items.indexOf(line), 1);
+          this.render();
+          this.persist();
+        });
+        body.appendChild(remove);
+        row.appendChild(body);
+        wrapper.appendChild(row);
+        if (result.message && (result.status === "invalid" || result.status === "malformed"))
+          wrapper.appendChild(el("p", "pmsg", result.message));
+        return wrapper;
+      };
+      const renderContainer = (container, target) => {
+        container.items.forEach((item, index) => {
+          if (item.kind === "line") {
+            const isAssumption = container.kind === "subproof" && index === 0;
+            const node = renderLine(item, container, isAssumption, container);
+            if (isAssumption) node.classList.add("assume");
+            target.appendChild(node);
+            return;
+          }
+          const box = el("div", "sub");
+          renderContainer(item, box);
+          const tools = el("div", "toolrow");
+          tools.style.margin = "4px 0 2px 4px";
+          const addLine = el("button", "btn sm", "+ riga");
+          addLine.addEventListener("click", () => {
+            item.items.push(new Line());
+            this.render();
+            this.persist();
+          });
+          const addSub = el("button", "btn sm", "+ sottodim.");
+          addSub.addEventListener("click", () => {
+            item.items.push(new Subproof());
+            this.render();
+            this.persist();
+          });
+          const drop = el("button", "btn sm ghost", "elimina blocco");
+          drop.addEventListener("click", () => {
+            container.items.splice(container.items.indexOf(item), 1);
+            this.render();
+            this.persist();
+          });
+          tools.append(addLine, addSub, drop);
+          box.appendChild(tools);
+          target.appendChild(box);
+        });
+      };
+      const scope = el("div", "scope");
+      renderContainer(this.proof, scope);
+      let lastPremise = -1;
+      this.proof.items.forEach((item, i) => {
+        if (item.kind === "line" && item.rule === Justification.PREMISE) lastPremise = i;
+      });
+      const children = [...scope.children];
+      if (lastPremise >= 0 && children[lastPremise]) {
+        Object.assign(children[lastPremise].style, {
+          borderBottom: "1.5px solid var(--ink)",
+          paddingBottom: "3px",
+          marginBottom: "3px"
+        });
+      }
+      host.appendChild(scope);
+      const verdict = clear($("#pf-verdict"));
+      const chipClass = VERDICT_CHIP[outcome.verdict.kind];
+      if (chipClass) verdict.appendChild(el("span", `chip ${chipClass}`, outcome.verdict.message));
+      if (this.focusKey) {
+        const field = host.querySelector(`[data-fk="${this.focusKey}"]`);
+        if (field) {
+          field.focus();
+          field.selectionStart = field.selectionEnd = field.value.length;
+        }
+        this.focusKey = null;
+      }
+    }
+    insertAfter(container, line) {
+      const created = new Line({ rule: line.rule === Justification.PREMISE ? Justification.PREMISE : "" });
+      container.items.splice(container.items.indexOf(line) + 1, 0, created);
+      this.focusKey = "f" + created.id;
+      this.render();
+      this.persist();
+    }
+  };
+
+  // src/main.js
+  var repository = new LocalStorageWorkspaceRepository();
+  var buildTruthTable = new BuildTruthTable();
+  var evaluateInWorld = new EvaluateInWorld();
+  var checkProof = new CheckProof();
+  async function bootstrap() {
+    new Router().start();
+    new SymbolPalette().start();
+    await new TruthTableView({ buildTruthTable, repository }).start();
+    await new WorldView({ evaluateInWorld, repository }).start();
+    await new ProofView({ checkProof, repository }).start();
+  }
+  bootstrap().catch((error) => {
+    console.error("avvio fallito", error);
+    document.body.prepend(Object.assign(document.createElement("p"), {
+      textContent: "Errore di avvio: " + error.message,
+      style: "padding:12px;background:#F7E5E2;color:#A23429;margin:0"
+    }));
+  });
+})();
+
+</script>
+</body>
+</html>

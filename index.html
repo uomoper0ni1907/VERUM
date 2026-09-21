@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Verum — strumenti per la logica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDEEE8; --panel:#FBFBF8; --panel-2:#F4F5EF;
+  --ink:#16181A; --ink2:#5A605C; --ink3:#8B918C;
+  --rule:#CBCEC4; --rule2:#DCDED5;
+  --blue:#2033C4; --blue-soft:#E4E7FA; --blue-line:#B9C0F0;
+  --red:#A23429; --red-soft:#F7E5E2;
+  --amber:#7A5C0E; --amber-soft:#F3ECD6;
+  --r:3px;
+  --f-ui:"IBM Plex Sans",system-ui,sans-serif;
+  --f-txt:"Spectral",Georgia,serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+input,select,textarea{font:inherit;color:inherit}
+.formula{font-family:var(--f-txt);font-size:1.06em;letter-spacing:.01em}
+
+/* ---------- shell ---------- */
+.screen{display:none}
+.screen.on{display:block}
+
+/* ---------- landing ---------- */
+.land{min-height:100vh;display:flex;flex-direction:column}
+.land-head{padding:clamp(28px,6vw,72px) clamp(20px,5vw,64px) 0;max-width:1240px;margin:0 auto;width:100%}
+.mark{font-family:var(--f-txt);font-weight:300;font-size:clamp(46px,9vw,104px);line-height:.92;letter-spacing:-.02em;margin:0}
+.mark em{font-style:italic;font-weight:300}
+.tagline{font-family:var(--f-txt);font-size:clamp(17px,2.2vw,21px);color:var(--ink2);max-width:46ch;margin:18px 0 0;line-height:1.55}
+.provenance{margin:26px 0 0;padding-top:16px;border-top:1px solid var(--rule);font-size:13px;color:var(--ink3);max-width:64ch}
+.tools{max-width:1240px;margin:0 auto;width:100%;padding:clamp(26px,5vw,56px) clamp(20px,5vw,64px) 64px;
+  display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--rule)}
+@media(max-width:880px){.tools{grid-template-columns:1fr}}
+.tool{background:var(--panel);border:0;text-align:left;padding:0;display:flex;flex-direction:column;min-height:420px;
+  transition:background .14s}
+.tool:hover,.tool:focus-visible{background:#fff}
+.tool:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tool-vis{flex:1;display:flex;align-items:center;justify-content:center;padding:26px;background:var(--panel-2);border-bottom:1px solid var(--rule2)}
+.tool-body{padding:22px 24px 26px}
+.tool h2{font-family:var(--f-txt);font-weight:400;font-size:27px;margin:0 0 2px;letter-spacing:-.01em}
+.tool .sub{font-size:12.5px;color:var(--ink3);margin:0 0 10px}
+.tool p{margin:0;color:var(--ink2);font-size:14px;line-height:1.55;max-width:34ch}
+.tool .go{margin-top:16px;font-size:13.5px;font-weight:500;color:var(--blue)}
+
+/* ---------- workspace chrome ---------- */
+.ws{min-height:100vh;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:14px;padding:10px clamp(14px,3vw,28px);background:var(--panel);
+  border-bottom:1px solid var(--rule);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+.back{background:none;border:1px solid var(--rule);border-radius:var(--r);padding:5px 11px;font-size:13px;color:var(--ink2)}
+.back:hover{border-color:var(--ink3);color:var(--ink)}
+.bar h1{font-family:var(--f-txt);font-weight:400;font-size:20px;margin:0;letter-spacing:-.01em}
+.bar .spacer{flex:1}
+.btn{background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);padding:6px 12px;font-size:13.5px}
+.btn:hover{border-color:var(--ink3)}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}
+.btn.primary:hover{background:#182aa8;border-color:#182aa8}
+.btn.ghost{background:none}
+.btn.sm{padding:3px 8px;font-size:12.5px}
+.btn:disabled{opacity:.42;cursor:default}
+
+.cols{flex:1;display:grid;gap:1px;background:var(--rule)}
+.pane{background:var(--panel);padding:18px clamp(14px,2.4vw,24px);overflow:auto}
+.pane h3{font-family:var(--f-ui);font-weight:600;font-size:12.5px;color:var(--ink3);margin:0 0 10px;letter-spacing:.02em}
+
+/* palette of symbols */
+.palette{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 12px}
+.palette button{font-family:var(--f-txt);font-size:16px;line-height:1;width:30px;height:28px;background:var(--panel-2);
+  border:1px solid var(--rule2);border-radius:var(--r);display:grid;place-items:center}
+.palette button:hover{background:var(--blue-soft);border-color:var(--blue-line)}
+
+/* formula rows */
+.frow{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.frow .n{width:22px;text-align:right;font-size:12px;color:var(--ink3);flex:none}
+.finput{flex:1;min-width:0;padding:6px 9px;border:1px solid var(--rule);border-radius:var(--r);background:#fff;
+  font-family:var(--f-txt);font-size:15.5px}
+.finput:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.finput.bad{border-color:var(--red);background:var(--red-soft)}
+.xbtn{border:none;background:none;color:var(--ink3);font-size:16px;line-height:1;padding:2px 5px;border-radius:var(--r)}
+.xbtn:hover{color:var(--red);background:var(--red-soft)}
+.err{font-size:12.5px;color:var(--red);margin:1px 0 7px 30px}
+
+/* verdict chips */
+.chip{display:inline-block;font-size:11.5px;font-weight:500;padding:2px 7px;border-radius:2px;border:1px solid}
+.chip.t{background:var(--blue-soft);border-color:var(--blue-line);color:var(--blue)}
+.chip.f{background:var(--red-soft);border-color:#E0BDB7;color:var(--red)}
+.chip.n{background:var(--panel-2);border-color:var(--rule);color:var(--ink3)}
+.chip.w{background:var(--amber-soft);border-color:#DECFA4;color:var(--amber)}
+
+/* truth table */
+.ttwrap{overflow:auto;border:1px solid var(--rule);border-radius:var(--r);background:#fff;max-height:60vh}
+table.tt{border-collapse:collapse;font-family:var(--f-txt);font-size:14.5px;white-space:nowrap}
+table.tt th,table.tt td{padding:3px 9px;text-align:center;border-bottom:1px solid var(--rule2)}
+table.tt thead th{position:sticky;top:0;background:var(--panel-2);border-bottom:1px solid var(--rule);font-weight:400;z-index:2}
+table.tt .sep{border-left:1px solid var(--rule)}
+table.tt td.ref{color:var(--ink3)}
+table.tt td.main{background:var(--blue-soft);font-weight:600}
+table.tt tbody tr:hover{background:#F7F8FD}
+.T{color:var(--blue)} .F{color:var(--red)}
+
+/* summary list */
+.sum{border:1px solid var(--rule);border-radius:var(--r);background:#fff;overflow:hidden}
+.sum .row{display:flex;gap:10px;align-items:baseline;padding:8px 11px;border-bottom:1px solid var(--rule2)}
+.sum .row:last-child{border-bottom:0}
+.sum .row .k{font-size:12.5px;color:var(--ink3);flex:none;width:auto}
+
+/* ---------- world grid ---------- */
+.board{--cell:56px;display:grid;grid-template-columns:repeat(8,var(--cell));grid-template-rows:repeat(8,var(--cell));
+  border:1px solid var(--ink);background:var(--rule2);gap:1px;width:max-content;margin:0 auto}
+.cell{background:#F3F4EE;position:relative;display:grid;place-items:center}
+.cell:nth-child(odd){background:#EAEBE4}
+.cell.drop{outline:2px solid var(--blue);outline-offset:-2px}
+.blk{width:100%;height:100%;display:grid;place-items:center;cursor:grab}
+.blk svg{display:block}
+.blk.sel svg .body{stroke:var(--blue);stroke-width:2.6}
+.blk .lbl{position:absolute;bottom:1px;right:3px;font-family:var(--f-txt);font-size:11px;color:var(--ink2)}
+.boardwrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.legend{font-size:12px;color:var(--ink3);text-align:center}
+.inspector{border:1px solid var(--rule);border-radius:var(--r);background:#fff;padding:12px}
+.inspector .grp{display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap}
+.inspector label{font-size:12px;color:var(--ink3);display:block;margin-bottom:4px}
+.seg{border:1px solid var(--rule);border-radius:var(--r);background:var(--panel-2);padding:4px 10px;font-size:13px}
+.seg.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.nametags{display:flex;gap:4px;flex-wrap:wrap}
+.nametag{border:1px solid var(--rule);border-radius:var(--r);padding:2px 8px;font-family:var(--f-txt);font-size:14px;background:var(--panel-2)}
+.nametag.on{background:var(--blue);border-color:var(--blue);color:#fff}
+
+/* ---------- fitch ---------- */
+.proof{font-family:var(--f-txt);font-size:15.5px}
+.pline{display:flex;align-items:center;gap:0;padding:1px 0}
+.pnum{width:30px;text-align:right;padding-right:9px;font-family:var(--f-ui);font-size:11.5px;color:var(--ink3);flex:none;user-select:none}
+.scope{border-left:1.5px solid var(--ink);margin-left:0;padding-left:10px;flex:1;min-width:0}
+.sub{border-left:1.5px solid var(--ink);padding-left:10px;margin:3px 0}
+.sub>.assume{border-bottom:1.5px solid var(--ink);padding-bottom:3px;margin-bottom:3px}
+.pbody{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.pf{flex:1;min-width:80px;border:1px solid transparent;border-radius:var(--r);padding:3px 7px;background:#fff}
+.pf:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 2px var(--blue-soft)}
+.pf.bad{background:var(--red-soft)}
+.prule{font-family:var(--f-ui);font-size:12.5px;width:118px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);background:var(--panel-2);padding:3px 4px}
+.prefs{font-family:var(--f-ui);font-size:12.5px;width:78px;flex:none;border:1px solid var(--rule2);border-radius:var(--r);padding:3px 6px;background:#fff}
+.pstat{width:18px;flex:none;text-align:center;font-size:14px}
+.pstat.ok{color:var(--blue)} .pstat.no{color:var(--red)}
+.pmsg{font-family:var(--f-ui);font-size:11.5px;color:var(--red);margin:0 0 3px 40px}
+.pconst{font-family:var(--f-txt);font-size:14px;border:1.5px solid var(--ink);border-radius:2px;padding:0 7px;background:#fff;width:52px;text-align:center}
+.goalbar{display:flex;gap:10px;align-items:center;padding:10px 12px;background:var(--panel-2);border:1px solid var(--rule);border-radius:var(--r);margin-bottom:14px;flex-wrap:wrap}
+.toolrow{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 0}
+.hint{font-size:12.5px;color:var(--ink3);line-height:1.6}
+.hint code{font-family:var(--f-txt);background:var(--panel-2);padding:0 4px;border-radius:2px;font-size:1.05em}
+details.docs{margin-top:16px;border-top:1px solid var(--rule2);padding-top:12px}
+details.docs summary{font-size:13px;color:var(--ink2);cursor:pointer}
+details.docs table{border-collapse:collapse;font-size:12.5px;margin-top:8px;width:100%}
+details.docs td{padding:2px 6px;border-bottom:1px solid var(--rule2);vertical-align:top}
+details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:var(--ink)}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<!-- ============ LANDING ============ -->
+<section id="s-home" class="screen on">
+ <div class="land">
+  <div class="land-head">
+    <h1 class="mark">Verum</h1>
+    <p class="tagline">Tre strumenti per la logica del primo ordine: costruire tavole di verità, valutare enunciati in un mondo di blocchi, e costruire derivazioni in stile Fitch.</p>
+    <p class="provenance">Riscrittura web, indipendente e originale, ispirata al tipo di esercizi del corso. Non contiene né deriva da codice dei programmi didattici esistenti.</p>
+  </div>
+  <div class="tools">
+    <button class="tool" data-go="tt">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g font-family="Spectral,Georgia,serif" font-size="14">
+            <line x1="10" y1="26" x2="180" y2="26" stroke="#CBCEC4"/>
+            <line x1="76" y1="8" x2="76" y2="142" stroke="#CBCEC4"/>
+            <text x="24" y="20" fill="#5A605C">P</text><text x="50" y="20" fill="#5A605C">Q</text>
+            <text x="100" y="20" fill="#16181A">P → Q</text>
+            <g>
+              <text x="24" y="48" fill="#2033C4">T</text><text x="50" y="48" fill="#2033C4">T</text><rect x="113" y="36" width="18" height="18" fill="#E4E7FA"/><text x="118" y="48" fill="#2033C4">T</text>
+              <text x="24" y="72" fill="#2033C4">T</text><text x="50" y="72" fill="#A23429">F</text><rect x="113" y="60" width="18" height="18" fill="#E4E7FA"/><text x="118" y="72" fill="#A23429">F</text>
+              <text x="24" y="96" fill="#A23429">F</text><text x="50" y="96" fill="#2033C4">T</text><rect x="113" y="84" width="18" height="18" fill="#E4E7FA"/><text x="118" y="96" fill="#2033C4">T</text>
+              <text x="24" y="120" fill="#A23429">F</text><text x="50" y="120" fill="#A23429">F</text><rect x="113" y="108" width="18" height="18" fill="#E4E7FA"/><text x="118" y="120" fill="#2033C4">T</text>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Tavole</h2>
+        <p class="sub">Logica proposizionale</p>
+        <p>Tavole di verità complete, con validità dell'argomento, tautologie e soddisfacibilità congiunta.</p>
+        <div class="go">Apri Tavole</div>
+      </div>
+    </button>
+
+    <button class="tool" data-go="wd">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g stroke="#16181A" fill="#F3F4EE" stroke-width="1.2">
+            <path d="M15 118 L175 118 L140 70 L50 70 Z" fill="#EAEBE4"/>
+            <path d="M64 74 L96 74 L104 62 L72 62 Z" fill="none" stroke="#CBCEC4"/>
+            <path d="M96 96 L136 96 L152 74 L112 74 Z" fill="none" stroke="#CBCEC4"/>
+            <g><rect x="72" y="74" width="26" height="26" fill="#FBFBF8"/><path d="M72 74 L80 66 L106 66 L98 74" fill="#EDEEE8"/><path d="M98 74 L106 66 L106 92 L98 100" fill="#E3E4DC"/></g>
+            <g><path d="M124 106 L142 106 L133 82 Z" fill="#FBFBF8"/><path d="M133 82 L142 106 L150 98 Z" fill="#E3E4DC"/></g>
+            <g><path d="M36 112 l9-6 9 6 -3 10 -12 0 z" fill="#FBFBF8"/><path d="M45 106 l9 6 -3 10" fill="#E3E4DC"/></g>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Mondi</h2>
+        <p class="sub">Semantica del primo ordine</p>
+        <p>Costruisci un mondo di blocchi e verifica quali enunciati quantificati risultano veri al suo interno.</p>
+        <div class="go">Apri Mondi</div>
+      </div>
+    </button>
+
+    <button class="tool" data-go="pf">
+      <div class="tool-vis">
+        <svg width="190" height="150" viewBox="0 0 190 150" aria-hidden="true">
+          <g font-family="Spectral,Georgia,serif" font-size="13.5" fill="#16181A">
+            <line x1="34" y1="16" x2="34" y2="134" stroke="#16181A" stroke-width="1.6"/>
+            <line x1="34" y1="52" x2="120" y2="52" stroke="#16181A" stroke-width="1.6"/>
+            <text x="16" y="34" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">1</text>
+            <text x="44" y="34">P ∧ Q</text>
+            <text x="16" y="74" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">2</text>
+            <line x1="52" y1="62" x2="52" y2="122" stroke="#16181A" stroke-width="1.6"/>
+            <line x1="52" y1="82" x2="112" y2="82" stroke="#16181A" stroke-width="1.6"/>
+            <text x="62" y="76">¬R</text>
+            <text x="16" y="104" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">3</text>
+            <text x="62" y="106">⊥</text>
+            <text x="16" y="134" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">4</text>
+            <text x="44" y="136">R</text>
+            <text x="104" y="136" font-family="IBM Plex Sans" font-size="10" fill="#8B918C">¬ Intro</text>
+          </g>
+        </svg>
+      </div>
+      <div class="tool-body">
+        <h2>Derivazioni</h2>
+        <p class="sub">Deduzione naturale</p>
+        <p>Editor di prove in stile Fitch con sottodimostrazioni e verifica regola per regola.</p>
+        <div class="go">Apri Derivazioni</div>
+      </div>
+    </button>
+  </div>
+ </div>
+</section>
+<!-- ============ TAVOLE ============ -->
+<section id="s-tt" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Tavole</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="tt-example">Carica esempio</button>
+    <button class="btn primary" id="tt-build">Costruisci tavola</button>
+  </div>
+  <div class="cols" style="grid-template-columns:minmax(300px,390px) 1fr">
+    <div class="pane">
+      <h3>Enunciati</h3>
+      <div class="palette" data-target="tt"></div>
+      <div id="tt-rows"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="tt-add">+ Enunciato</button>
+        <button class="btn sm ghost" id="tt-clear">Svuota</button>
+      </div>
+      <p class="hint" style="margin-top:14px">L'ultimo enunciato è trattato come <b>conclusione</b>, i precedenti come premesse. Le lettere proposizionali sono qualsiasi identificatore, es. <code>P</code>, <code>Piove</code>, <code>Cube(a)</code>.</p>
+      <details class="docs">
+        <summary>Sintassi accettata</summary>
+        <table>
+          <tr><td>¬ ~ ! </td><td>negazione</td></tr>
+          <tr><td>∧ &amp; </td><td>congiunzione</td></tr>
+          <tr><td>∨ | </td><td>disgiunzione</td></tr>
+          <tr><td>→ $ -&gt; </td><td>condizionale</td></tr>
+          <tr><td>↔ % &lt;-&gt; </td><td>bicondizionale</td></tr>
+          <tr><td>⊥ # </td><td>contraddizione</td></tr>
+        </table>
+      </details>
+    </div>
+    <div class="pane" id="tt-out"></div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ MONDI ============ -->
+<section id="s-wd" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Mondi</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="wd-example">Mondo di esempio</button>
+    <button class="btn" id="wd-clearworld">Svuota mondo</button>
+    <button class="btn primary" id="wd-eval">Valuta enunciati</button>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr minmax(330px,430px)">
+    <div class="pane">
+      <div class="boardwrap">
+        <div class="board" id="wd-board"></div>
+        <p class="legend">Trascina un blocco per spostarlo · clic su una casella vuota per aggiungerne uno · clic su un blocco per selezionarlo<br>La riga in basso è il <b>fronte</b> del tavolo, la colonna a sinistra è la <b>sinistra</b>.</p>
+        <div class="inspector" id="wd-insp" style="width:min(560px,100%)"></div>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Enunciati</h3>
+      <div class="palette" data-target="wd"></div>
+      <div id="wd-rows"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="wd-add">+ Enunciato</button>
+        <button class="btn sm ghost" id="wd-clearsent">Svuota</button>
+      </div>
+      <details class="docs" open>
+        <summary>Predicati del linguaggio</summary>
+        <table>
+          <tr><td>Tet(x) Cube(x) Dodec(x)</td><td>forma</td></tr>
+          <tr><td>Small(x) Medium(x) Large(x)</td><td>dimensione</td></tr>
+          <tr><td>SameSize(x,y) SameShape(x,y)</td><td>stessa dimensione / forma</td></tr>
+          <tr><td>SameRow(x,y) SameCol(x,y)</td><td>stessa riga / colonna</td></tr>
+          <tr><td>Larger(x,y) Smaller(x,y)</td><td>confronto di dimensione</td></tr>
+          <tr><td>LeftOf(x,y) RightOf(x,y)</td><td>colonna più a sinistra / destra</td></tr>
+          <tr><td>FrontOf(x,y) BackOf(x,y)</td><td>riga più avanti / indietro</td></tr>
+          <tr><td>Adjoins(x,y)</td><td>caselle contigue (non in diagonale)</td></tr>
+          <tr><td>Between(x,y,z)</td><td>x fra y e z sulla stessa linea</td></tr>
+          <tr><td>x = y</td><td>identità</td></tr>
+          <tr><td>∀x ∃x @x /x</td><td>quantificatori</td></tr>
+        </table>
+      </details>
+      <p class="hint" style="margin-top:10px">Le costanti disponibili sono <code>a b c d e f</code>. Assegnale ai blocchi nel pannello di ispezione. Un nome non assegnato rende l'enunciato indefinito.</p>
+    </div>
+  </div>
+ </div>
+</section>
+
+<!-- ============ DERIVAZIONI ============ -->
+<section id="s-pf" class="screen">
+ <div class="ws">
+  <div class="bar">
+    <button class="back" data-home>← Verum</button>
+    <h1>Derivazioni</h1>
+    <span class="spacer"></span>
+    <button class="btn" id="pf-example">Carica esempio</button>
+    <button class="btn" id="pf-reset">Nuova prova</button>
+    <button class="btn primary" id="pf-check">Verifica prova</button>
+  </div>
+  <div class="cols" style="grid-template-columns:1fr minmax(280px,340px)">
+    <div class="pane">
+      <div class="goalbar">
+        <span style="font-size:12.5px;color:var(--ink3)">Obiettivo</span>
+        <input class="finput formula" id="pf-goal" style="max-width:340px" placeholder="es. P → (Q → P)">
+        <span id="pf-verdict"></span>
+      </div>
+      <div class="palette" data-target="pf"></div>
+      <div class="proof" id="pf-proof"></div>
+      <div class="toolrow">
+        <button class="btn sm" id="pf-addprem">+ Premessa</button>
+        <button class="btn sm" id="pf-addline">+ Riga</button>
+        <button class="btn sm" id="pf-addsub">+ Sottodimostrazione</button>
+      </div>
+    </div>
+    <div class="pane">
+      <h3>Come si cita</h3>
+      <p class="hint">Nel campo <b>rif.</b> scrivi i numeri di riga separati da virgola: <code>1,2</code>.<br>
+      Per citare una <b>sottodimostrazione</b> usa l'intervallo prima–ultima riga: <code>3-5</code>.<br>
+      Ogni riga si verifica da sola: il pallino a destra diventa blu quando la regola è applicata correttamente.</p>
+      <h3 style="margin-top:18px">Regole disponibili</h3>
+      <details class="docs" open>
+        <summary>Proposizionali</summary>
+        <table>
+          <tr><td>Reit</td><td>ripeti una riga accessibile</td></tr>
+          <tr><td>∧ Intro</td><td>da tutti i congiunti</td></tr>
+          <tr><td>∧ Elim</td><td>da una congiunzione a un congiunto</td></tr>
+          <tr><td>∨ Intro</td><td>da un disgiunto alla disgiunzione</td></tr>
+          <tr><td>∨ Elim</td><td>disgiunzione + una sottodim. per disgiunto</td></tr>
+          <tr><td>→ Intro</td><td>sottodim. da P a Q</td></tr>
+          <tr><td>→ Elim</td><td>P→Q e P</td></tr>
+          <tr><td>↔ Intro</td><td>due sottodim., P⇒Q e Q⇒P</td></tr>
+          <tr><td>↔ Elim</td><td>P↔Q e uno dei due lati</td></tr>
+          <tr><td>¬ Intro</td><td>sottodim. da P a ⊥</td></tr>
+          <tr><td>¬ Elim</td><td>da ¬¬P a P</td></tr>
+          <tr><td>⊥ Intro</td><td>P e ¬P</td></tr>
+          <tr><td>⊥ Elim</td><td>da ⊥ a qualsiasi cosa</td></tr>
+          <tr><td>Taut Con</td><td>conseguenza tautologica delle righe citate</td></tr>
+        </table>
+      </details>
+      <details class="docs">
+        <summary>Quantificatori e identità</summary>
+        <table>
+          <tr><td>∀ Elim</td><td>da ∀x P(x) a P(c)</td></tr>
+          <tr><td>∀ Intro</td><td>sottodim. con costante nuova che prova P(c)</td></tr>
+          <tr><td>∃ Intro</td><td>da P(c) a ∃x P(x)</td></tr>
+          <tr><td>∃ Elim</td><td>∃x P(x) + sottodim. con costante nuova</td></tr>
+          <tr><td>= Intro</td><td>t = t, senza citazioni</td></tr>
+          <tr><td>= Elim</td><td>da P(a) e a=b a P(b)</td></tr>
+        </table>
+        <p class="hint" style="margin-top:8px">Per ∀ Intro e ∃ Elim, dichiara la costante nuova nella casella squadrata in cima alla sottodimostrazione.</p>
+      </details>
+    </div>
+  </div>
+ </div>
+</section>
+
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
