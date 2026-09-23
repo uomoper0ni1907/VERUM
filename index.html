@@ -265,7 +265,24 @@ table.tt tbody tr:hover{background:var(--row-hover)}
 /* ---------- fitch ---------- */
 .proof{font-family:var(--f-txt);font-size:15.5px}
 .pline{display:flex;align-items:center;gap:0;padding:1px 0}
-.pnum{width:30px;text-align:right;padding-right:9px;font-family:var(--f-ui);font-size:11.5px;color:var(--ink3);flex:none;user-select:none}
+.pnum{width:30px;text-align:right;padding-right:9px;font-family:var(--f-ui);font-size:11.5px;color:var(--ink3);
+  flex:none;user-select:none;background:none;border:0;border-radius:3px;cursor:default}
+
+/* comporre i riferimenti con un clic */
+#pf-proof.citing .citable>.pline>.pnum{color:var(--blue);background:var(--blue-soft);cursor:pointer;
+  outline:1px dashed var(--blue-line);outline-offset:-1px;font-weight:600}
+#pf-proof.citing .citable>.pline>.pnum:hover{background:var(--blue);color:var(--panel);outline-color:var(--blue)}
+.cited{background:var(--blue-soft);border-radius:3px;box-shadow:inset 3px 0 0 var(--blue)}
+.sub.cited{box-shadow:inset 3px 0 0 var(--blue);background:var(--blue-soft);border-radius:3px}
+.citehint{display:flex;align-items:center;gap:8px;margin:0 0 10px;padding:6px 10px;font-size:12.5px;
+  color:var(--blue);background:var(--blue-soft);border:1px solid var(--blue-line);border-radius:var(--r)}
+.citehint[hidden]{display:none}
+.sub{position:relative}
+.subhandle{position:absolute;left:-7px;top:0;bottom:0;width:13px;padding:0;border:0;border-radius:3px;
+  background:none;color:var(--blue);cursor:default;opacity:0;display:grid;place-items:center}
+#pf-proof.citing .sub.citable>.subhandle{opacity:1;cursor:pointer;background:var(--blue-soft)}
+#pf-proof.citing .sub.citable>.subhandle:hover{background:var(--blue-line);color:var(--panel)}
+.subrange{writing-mode:vertical-rl;font-family:var(--f-ui);font-size:9px;letter-spacing:.02em}
 .scope{border-left:1.5px solid var(--ink);margin-left:0;padding-left:10px;flex:1;min-width:0}
 .sub{border-left:1.5px solid var(--ink);padding-left:10px;margin:3px 0}
 .sub>.assume{border-bottom:1.5px solid var(--ink);padding-bottom:3px;margin-bottom:3px}
@@ -565,6 +582,7 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
         <span id="pf-verdict"></span>
       </div>
       <div class="palette" data-target="pf"></div>
+      <p class="citehint" id="pf-citehint" hidden>Clicca il numero di una riga, o la linguetta blu a sinistra di una sottodimostrazione, per citarla. Un secondo clic la toglie.</p>
       <div class="proof" id="pf-proof"></div>
       <div class="toolrow">
         <button class="btn sm" id="pf-addprem">+ Premessa</button>
@@ -577,6 +595,9 @@ details.docs td:first-child{font-family:var(--f-txt);white-space:nowrap;color:va
         <summary>Come si cita</summary>
         <p class="hint">Nel campo <b>rif.</b> scrivi i numeri di riga separati da virgola: <code>1,2</code>.
         Per citare una <b>sottodimostrazione</b> usa l'intervallo prima–ultima riga: <code>3-5</code>.
+        Più comodo: mentre il campo <b>rif.</b> è attivo, clicca il numero di una riga o la linguetta a sinistra
+        di una sottodimostrazione per aggiungerla; cliccala di nuovo per toglierla. Sono cliccabili solo le righe
+        che quella riga può davvero citare, e i riferimenti della riga su cui stai lavorando restano evidenziati.
         Per ∀ Intro e ∃ Elim dichiara la costante nuova nella casella squadrata della sottodimostrazione.
         Il pallino a destra di ogni riga diventa blu quando la regola è applicata correttamente.</p>
       </details>

@@ -17,7 +17,8 @@ export class TruthTableView {
 
   async start() {
     const saved = await this.repository.load('truth-table');
-    if (Array.isArray(saved?.sentences) && saved.sentences.length) this.sentences = saved.sentences;
+    const sentences = (Array.isArray(saved?.sentences) ? saved.sentences : []).filter(s => typeof s === 'string');
+    if (sentences.length) this.sentences = sentences;
 
     $('#tt-add').addEventListener('click', () => { this.sentences.push(''); this.renderInputs(); this.focusLast(); });
     $('#tt-clear').addEventListener('click', () => { this.sentences = ['']; this.renderInputs(); clear($('#tt-out')); this.persist(); });

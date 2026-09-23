@@ -12,6 +12,7 @@ import { isTautologicalConsequence } from '../src/domain/truth/TruthTable.js';
 import { World, Block, Shape, Size, WorldInvariantViolation, PLACEMENT } from '../src/domain/world/World.js';
 import { Proof, Line, Subproof, Justification, resetIds } from '../src/domain/proof/Proof.js';
 import { freshConstant, namesInUse, isConstantName } from '../src/domain/proof/constants.js';
+import { citationTokens, toggleCitation } from '../src/domain/proof/citations.js';
 import { BuildTruthTable } from '../src/application/BuildTruthTable.js';
 import { EvaluateInWorld } from '../src/application/EvaluateInWorld.js';
 import { CheckProof } from '../src/application/CheckProof.js';
@@ -304,4 +305,12 @@ export default function suite(t) {
     new Line({ text:'∀y (Cube(y) ∨ ¬Cube(y))', rule:'∀ Intro', citations:'1-2' })
   ]});
   t('costante con nome di variabile: rifiutata', statusOf(badName, 2).status === 'invalid');
+
+  /* ---------- riferimenti ---------- */
+  t('riferimenti: lettura',        citationTokens(' 1, 2 - 7 ,8-10').join('|') === '1|2-7|8-10');
+  t('riferimenti: aggiunta',       toggleCitation('1', '3') === '1, 3');
+  t('riferimenti: in ordine',      toggleCitation('8-10, 1', '2-7') === '1, 2-7, 8-10');
+  t('riferimenti: secondo clic toglie', toggleCitation('1, 2-7', '2-7') === '1');
+  t('riferimenti: da vuoto',       toggleCitation('', '4') === '4');
+  t('riferimenti: toglie l\u2019ultimo', toggleCitation('4', '4') === '');
 }

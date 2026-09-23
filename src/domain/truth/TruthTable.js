@@ -20,6 +20,10 @@ export function atomsOf(f, acc = new Map()) {
   return acc;
 }
 
+/** Oggetto senza prototipo: un atomo che si chiama "constructor" o "toString"
+ *  non deve ereditare un valore di verita' da Object.prototype. */
+export const emptyAssignment = () => Object.create(null);
+
 export function valueUnder(f, assignment) {
   switch (f.t) {
     case 'bot': return false;
@@ -28,7 +32,7 @@ export function valueUnder(f, assignment) {
     case 'or':  return valueUnder(f.l, assignment) || valueUnder(f.r, assignment);
     case 'imp': return !valueUnder(f.l, assignment) || valueUnder(f.r, assignment);
     case 'iff': return valueUnder(f.l, assignment) === valueUnder(f.r, assignment);
-    default:    return Boolean(assignment[print(f)]);
+    default:    return assignment[print(f)] === true;
   }
 }
 
@@ -44,7 +48,7 @@ export function tableFor(formulas) {
   const columns = formulas.map(() => []);
 
   for (let r = 0; r < rowCount; r++) {
-    const assignment = {};
+    const assignment = emptyAssignment();
     atoms.forEach((a, i) => { assignment[a] = !((r >> (atoms.length - 1 - i)) & 1); });
     assignments.push(assignment);
     formulas.forEach((f, j) => columns[j].push(valueUnder(f, assignment)));

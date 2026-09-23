@@ -35,9 +35,17 @@ I moduli ES non si caricano da `file://`. Serve un server statico:
     node test/run.mjs          # nucleo + conformita' architetturale
     npm run test:smoke         # avvia il bundle in un DOM simulato (richiede npm install)
 
-Due suite: comportamento del nucleo (parser, semantica, regole di inferenza) e
-conformita' architetturale (direzione delle dipendenze fra strati).
-Nessuna delle due avvia un browser.
+Quattro suite, nessuna delle quali avvia un browser vero:
+
+| comando | cosa verifica |
+|---|---|
+| `node test/run.mjs` | comportamento del nucleo (parser, semantica, regole), importazione dei file del corso, robustezza su input storti, e conformita' architetturale |
+| `node test/smoke.test.mjs` | il bundle consegnato si avvia e le funzioni principali rispondono |
+| `node test/stress.test.mjs` | pestaggio casuale dell'interfaccia, prove lunghe, stato salvato corrotto |
+
+Lo stress test e' deterministico: `VERUM_SEED=101 node test/stress.test.mjs`
+ripete esattamente la stessa sequenza di azioni.
+Gli ultimi due richiedono `node build.mjs` prima.
 
 ## Build
 

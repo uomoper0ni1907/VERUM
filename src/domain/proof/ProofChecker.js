@@ -10,6 +10,7 @@
 import { Proof, Justification } from './Proof.js';
 import { RULES } from './rules.js';
 import { tryParse } from '../language/Parser.js';
+import { citationTokens } from './citations.js';
 import { equals } from '../language/Formula.js';
 
 export const Status = Object.freeze({
@@ -85,7 +86,7 @@ export class ProofChecker {
   }
 
   resolveCitations(citations, entry, index, formulas, proof) {
-    const tokens = (citations || '').split(',').map(s => s.trim()).filter(Boolean);
+    const tokens = citationTokens(citations);
     const lines = [], subproofs = [];
 
     for (const token of tokens) {

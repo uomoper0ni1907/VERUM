@@ -30,7 +30,8 @@ export class SentenceLibraryMenu {
 
   async start() {
     const saved = await this.repository.load(KEY);
-    if (Array.isArray(saved)) this.library = saved;
+    this.library = (Array.isArray(saved) ? saved : []).filter(c =>
+      c && typeof c.title === 'string' && Array.isArray(c.sentences));
 
     this.button.setAttribute('aria-haspopup', 'true');
     this.button.setAttribute('aria-expanded', 'false');

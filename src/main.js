@@ -35,26 +35,32 @@ const buildTruthTable = new BuildTruthTable();
 const evaluateInWorld = new EvaluateInWorld();
 const checkProof      = new CheckProof();
 
+/** Ogni schermata si avvia per conto suo: se una si rompe, le altre restano usabili. */
+async function startSafely(what, start) {
+  try { await start(); }
+  catch (error) { console.warn(`avvio di ${what} non riuscito`, error); }
+}
+
 async function bootstrap() {
   console.info('Verum \u00a9 2026 Liam Michael Boland. Tutti i diritti riservati.');
   await repository.resetIfOutdated(SCHEMA_VERSION, ['truth-table', 'world', 'proof']);
   new Router().start();
   new SymbolPalette().start();
-  await new ThemeSwitcher({ repository }).start();
+  await startSafely('temi', () => new ThemeSwitcher({ repository }).start());
 
-  await new TruthTableView({ buildTruthTable, repository }).start();
+  await startSafely('Tavole', () => new TruthTableView({ buildTruthTable, repository }).start());
   const worldView = new WorldView({ evaluateInWorld, repository });
-  await worldView.start();
+  await startSafely('Mondi', () => worldView.start());
   new BlocksKeypad({ host: document.getElementById('wd-keypad'), fields: document.getElementById('wd-rows') }).start();
-  await new SentenceLibraryMenu({
+  await startSafely('raccolte di enunciati', () => new SentenceLibraryMenu({
     button: document.getElementById('wd-library'),
     host: document.getElementById('wd-libpop'),
     repository,
     importer: new SenFileImporter(),
     onPick: collection => worldView.loadCollection(collection)
-  }).start();
-  await new ProofView({ checkProof, repository }).start();
-  await new RulesPdfPanel({ host: document.getElementById('pf-rules'), fileStore }).start();
+  }).start());
+  await startSafely('Derivazioni', () => new ProofView({ checkProof, repository }).start());
+  await startSafely('pannello delle regole', () => new RulesPdfPanel({ host: document.getElementById('pf-rules'), fileStore }).start());
 }
 
 bootstrap().catch(error => {

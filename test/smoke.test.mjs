@@ -154,6 +154,36 @@ d.querySelector('#pf-proof .pconst').focus();
 [...d.querySelectorAll('#pf-proof .cpick-opt')].find(b => b.textContent === 'nessuna').click();
 t('costante: si puo\u2019 lasciare vuota', d.querySelector('#pf-proof .pconst').value === '');
 
+// riferimenti con un clic
+d.querySelector('#pf-reset').click();
+d.querySelector('#pf-addsub').click();
+d.querySelector('#pf-addline').click();
+const rifOf = n => d.querySelectorAll('#pf-proof .prefs')[n];
+const numOf = n => [...d.querySelectorAll('#pf-proof .pnum')].find(b => b.textContent === String(n));
+const rowOf = n => numOf(n).closest('.pline').parentElement;   // il contenitore della riga, non il blocco che la racchiude
+rifOf(3).focus();   // ultima riga (4), al livello principale
+t('rif: modalita\u2019 citazione attiva', d.querySelector('#pf-proof').classList.contains('citing'));
+t('rif: avviso visibile mentre si cita', d.querySelector('#pf-citehint').hidden === false);
+t('rif: la riga 1 e\u2019 citabile', rowOf(1).classList.contains('citable'));
+t('rif: la riga dentro la sottodim. non e\u2019 citabile da sola', !rowOf(3).classList.contains('citable'));
+numOf(1).click();
+t('rif: numero inserito', rifOf(3).value === '1');
+t('rif: riga citata evidenziata', rowOf(1).classList.contains('cited'));
+d.querySelector('#pf-proof .subhandle').click();
+t('rif: sottodimostrazione citata', rifOf(3).value === '1, 3-3');
+t('rif: blocco evidenziato', !!d.querySelector('#pf-proof .sub.cited'));
+numOf(1).click();
+t('rif: secondo clic toglie', rifOf(3).value === '3-3');
+// passaggio diretto da un campo rif. a un altro: il fuoco deve seguire l'utente
+const target = rifOf(0);
+rifOf(3).dispatchEvent(new W.FocusEvent('blur', { relatedTarget: target }));
+target.focus();
+t('rif: il fuoco segue il campo successivo', d.activeElement?.dataset.fk === target.dataset.fk);
+t('rif: evidenziazione solo della riga attiva', d.querySelectorAll('#pf-proof .cited').length === 0);
+d.activeElement.blur();
+t('rif: avviso nascosto fuori dalla citazione', d.querySelector('#pf-citehint').hidden === true);
+t('rif: la riga 1 non puo\u2019 citare se stessa', !rowOf(1).classList.contains('citable'));
+
 if (runtimeErrors.length) console.log(runtimeErrors.join('\n'));
 console.log(`\nsmoke test: ${pass} passati, ${fail} falliti`);
 process.exit(fail ? 1 : 0);

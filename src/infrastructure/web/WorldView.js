@@ -33,16 +33,7 @@ export class WorldView {
   }
 
   async start() {
-    const saved = await this.repository.load('world');
-    if (saved?.blocks) {
-      this.blocks = saved.blocks.map(b => ({ ...b }));
-      this.nextId = Math.max(0, ...this.blocks.map(b => b.id)) + 1;
-      if (saved.sentences?.length) this.sentences = saved.sentences;
-      this.notes = this.sentences.map((_, i) => saved.notes?.[i] ?? '');
-      this.collection = saved.collection ?? '';
-    } else {
-      this.blocks = []; this.selected = null; this.nextId = 1;
-    }
+    this.restore(await this.repository.load('world'));
 
     $('#wd-add').addEventListener('click', () => { this.sentences.push(''); this.notes.push(''); this.renderSentences(); });
     $('#wd-clearsent').addEventListener('click', () => { this.setSentences([]); this.persist(); });
@@ -60,6 +51,31 @@ export class WorldView {
     });
 
     this.renderBoard(); this.renderInspector(); this.renderSentences();
+  }
+
+  /**
+   * Ripristina il mondo salvato scartando cio' che non e' costruibile:
+   * i dati possono venire da una versione precedente o essere stati modificati.
+   */
+  restore(saved) {
+    this.blocks = []; this.selected = null; this.nextId = 1;
+    if (!saved || typeof saved !== 'object') return;
+    try {
+      const valid = (Array.isArray(saved.blocks) ? saved.blocks : []).filter(b => {
+        try { new Block(b); return Number.isInteger(b.id); } catch { return false; }
+      });
+      this.blocks = valid.map(b => ({ ...b, names: Array.isArray(b.names) ? [...b.names] : [] }));
+      this.nextId = Math.max(0, ...this.blocks.map(b => b.id)) + 1;
+
+      const sentences = (Array.isArray(saved.sentences) ? saved.sentences : []).filter(s => typeof s === 'string');
+      if (sentences.length) this.sentences = sentences;
+      this.notes = this.sentences.map((_, i) => (typeof saved.notes?.[i] === 'string' ? saved.notes[i] : ''));
+      this.collection = typeof saved.collection === 'string' ? saved.collection : '';
+    } catch (error) {
+      console.warn('mondo salvato illeggibile, si riparte da un tavolo vuoto', error);
+      this.repository.remove('world');
+      this.blocks = []; this.sentences = ['']; this.notes = ['']; this.collection = '';
+    }
   }
 
   persist() { this.repository.save('world', { blocks: this.blocks, sentences: this.sentences, notes: this.notes, collection: this.collection }); }
